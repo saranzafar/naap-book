@@ -1,7 +1,8 @@
 import React, { PropsWithChildren, useRef } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Client } from '../types/Client';
+import { Pencil, Trash2 } from 'lucide-react-native';
 
 type Props = {
   client: Client;
@@ -13,15 +14,18 @@ export const SwipeableClientItem: React.FC<Props> = ({ client, onEdit, onDelete,
   const ref = useRef<Swipeable | null>(null);
 
   const renderRightActions = () => (
-    <View className="flex-row">
+    <View className="flex-row items-center pr-2">
       <TouchableOpacity
         onPress={() => {
           ref.current?.close();
           onEdit(client);
         }}
-        className="bg-yellow-500 px-4 justify-center"
+        activeOpacity={0.9}
+        className="w-10 h-10 rounded-full bg-yellow-500 items-center justify-center mx-1 shadow-sm"
+        accessibilityRole="button"
+        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
       >
-        <Text className="text-white font-medium">Edit</Text>
+        <Pencil color="white" size={18} />
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -29,15 +33,24 @@ export const SwipeableClientItem: React.FC<Props> = ({ client, onEdit, onDelete,
           ref.current?.close();
           onDelete(client);
         }}
-        className="bg-red-600 px-4 justify-center"
+        activeOpacity={0.9}
+        className="w-10 h-10 rounded-full bg-red-600 items-center justify-center mx-1 shadow-sm"
+        accessibilityRole="button"
+        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
       >
-        <Text className="text-white font-medium">Delete</Text>
+        <Trash2 color="white" size={18} />
       </TouchableOpacity>
     </View>
   );
 
   return (
-    <Swipeable ref={ref} renderRightActions={renderRightActions}>
+    <Swipeable
+      ref={ref}
+      renderRightActions={renderRightActions}
+      friction={2}
+      rightThreshold={40}
+      overshootRight={false}
+    >
       {children}
     </Swipeable>
   );
