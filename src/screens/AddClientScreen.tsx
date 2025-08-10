@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, ScrollView, Text, TouchableOpacity } from "react-native";
+import { View, ScrollView, Text, TouchableOpacity, SafeAreaView } from "react-native";
 import { addClient } from "../services/StorageService";
 import {
     validateMeasurementValues,
@@ -93,32 +93,92 @@ export default function AddClientScreen({
     };
 
     return (
-        <ScrollView className="flex-1 p-4">
-            <Text className="text-xl font-bold mb-2">Add New Client</Text>
-
-            <AddClientForm values={client} onChange={setClient} errors={errors} />
-            <MeasurementsForm values={measurements} onChange={setMeasurements} />
-
-            {!!errors.length && (
-                <View className="mb-2">
-                    {errors.map((err, i) => (
-                        <Text key={i} className="text-red-500">
-                            {err}
-                        </Text>
-                    ))}
-                </View>
-            )}
-
-            <TouchableOpacity
-                onPress={handleSubmit}
-                disabled={saving}
-                className={`${saving ? "bg-blue-400" : "bg-blue-600"} py-3 rounded-lg items-center mt-4`}
-                activeOpacity={0.8}
+        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900">
+            <ScrollView
+                className="flex-1"
+                showsVerticalScrollIndicator={false}
             >
-                <Text className="text-white font-bold text-lg">
-                    {saving ? "Saving..." : "Save Client"}
-                </Text>
-            </TouchableOpacity>
-        </ScrollView>
+                {/* Header */}
+                <View className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-100 dark:border-gray-700">
+                    <View className="px-6 py-6">
+                        <Text className="text-3xl font-bold text-gray-900 dark:text-white">
+                            Add New Client
+                        </Text>
+                        <Text className="text-gray-500 dark:text-gray-400 mt-1">
+                            Enter client details and measurements
+                        </Text>
+                    </View>
+                </View>
+
+                {/* Content */}
+                <View className="p-4">
+                    {/* Client Information Card */}
+                    <View className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <View className="p-3 bg-blue-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-600">
+                            <Text className="text-lg font-semibold text-gray-900 dark:text-white">
+                                Client Information
+                            </Text>
+                        </View>
+                        <View className="p-4">
+                            <AddClientForm
+                                values={client}
+                                onChange={setClient}
+                                errors={errors}
+                            />
+                        </View>
+                    </View>
+
+                    {/* Measurements Card */}
+                    <View className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <View className="px-4 py-3 bg-green-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-600">
+                            <Text className="text-lg font-semibold text-gray-900 dark:text-white">
+                                Measurements
+                            </Text>
+                        </View>
+                        <View className="">
+                            <MeasurementsForm
+                                values={measurements}
+                                onChange={setMeasurements}
+                            />
+                        </View>
+                    </View>
+
+                    {/* Error Messages */}
+                    {errors.length > 0 && (
+                        <View className="bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 p-4">
+                            <View className="flex-row items-center mb-2">
+                                <View className="w-2 h-2 bg-red-500 rounded-full mr-2" />
+                                <Text className="text-red-800 dark:text-red-400 font-medium">
+                                    Please fix the following errors:
+                                </Text>
+                            </View>
+                            {errors.map((err, i) => (
+                                <Text
+                                    key={i}
+                                    className="text-red-700 dark:text-red-300 text-sm ml-4 mb-1"
+                                >
+                                    • {err}
+                                </Text>
+                            ))}
+                        </View>
+                    )}
+
+                    {/* Save Button */}
+                    <TouchableOpacity
+                        onPress={handleSubmit}
+                        disabled={saving}
+                        className={`${saving
+                                ? "bg-gray-400 dark:bg-gray-600"
+                                : "bg-blue-600 dark:bg-blue-500"
+                            } py-4 px-6 rounded-xl items-center justify-center shadow-lg`}
+                        activeOpacity={0.8}
+                    >
+                        <Text className="text-white font-semibold text-lg">
+                            {saving ? "Saving..." : "Save Client"}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
