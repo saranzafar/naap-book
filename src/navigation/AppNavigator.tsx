@@ -9,11 +9,13 @@ import HomeScreen from '../screens/HomeScreen';
 import AddClientScreen from '../screens/AddClientScreen';
 import ClientDetailScreen from '../screens/ClientDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import EditClientScreen from '../screens/EditClientScreen';
 
 export type RootStackParamList = {
   Home: undefined;
   AddClient: { clientId?: string };
   ClientDetail: { clientId: string };
+  EditClient: { clientId: string };
   Settings: undefined;
 };
 
@@ -47,6 +49,15 @@ const AppNavigator = () => {
           component={AddClientScreen}
           options={{
             title: 'Add Client',
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="EditClient"
+          component={EditClientScreen}
+          options={{
+            title: 'Edit Client',
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}

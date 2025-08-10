@@ -1,59 +1,137 @@
-import React, { useCallback, useState } from "react";
-import { View, Text, ActivityIndicator, TouchableOpacity, FlatList } from "react-native";
-import { getAllClients } from "../services/StorageService";
-import ClientCard from "../components/ClientCard";
-import EmptyState from "../components/EmptyState";
-import { Client } from "../types/Client";
+// screens/HomeScreen.tsx
+import React, { useCallback, useRef, useState } from 'react';
+import {
+    View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert,
+} from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Plus } from 'lucide-react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../navigation/AppNavigator";
+
+import { getAllClients, deleteClient } from '../services/StorageService';
+import ClientCard from '../components/ClientCard';
+import EmptyState from '../components/EmptyState';
+import { SwipeableClientItem } from '../components/SwipeableClientItem';
+import { Client } from '../types/Client';
+import { RootStackParamList } from '../navigation/AppNavigator';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
+    const navigation = useNavigation<Nav>();
+
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const isActive = useRef(true);
 
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const loadClients = useCallback(
+        async (opts: { showSpinner?: boolean } = {}) => {
+            const { showSpinner = true } = opts;
+            try {
+                if (showSpinner) setLoading(true);
+                const data = await getAllClients(); // already Client[]
+                if (isActive.current) setClients(data);
+            } catch (error) {
+                console.error('Error loading clients:', error);
+                if (isActive.current) Alert.alert('Error', 'Failed to load clients');
+            } finally {
+                if (isActive.current) {
+                    if (showSpinner) setLoading(false);
+                    setRefreshing(false);
+                }
+            }
+        },
+        []
+    );
 
-    const fetchClients = useCallback(() => {
-        setLoading(true);
-        getAllClients().then(data => {
-            setClients(data);
-            setLoading(false);
-        });
-    }, []);
-
-    useFocusEffect(fetchClients);
+    useFocusEffect(
+        useCallback(() => {
+            isActive.current = true;
+            loadClients();
+            return () => {
+                isActive.current = false;
+            };
+        }, [loadClients])
+    );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-        getAllClients().then(data => {
-            setClients(data);
-            setRefreshing(false);
-        });
-    }, []);
+        loadClients({ showSpinner: false });
+    }, [loadClients]);
 
-    if (loading) return <ActivityIndicator size="large" />;
+    const handleEditClient = useCallback(
+        (client: Client) => {
+            navigation.navigate('EditClient', { clientId: client.id });
+        },
+        [navigation]
+    );
+
+    const handleDeleteClient = useCallback(
+        (client: Client) => {
+            Alert.alert(
+                'Delete Client',
+                `Are you sure you want to delete "${client.name}"?`,
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Delete',
+                        style: 'destructive',
+                        onPress: async () => {
+                            try {
+                                await deleteClient(client.id);
+                                await loadClients({ showSpinner: false });
+                                Alert.alert('Deleted', 'Client deleted successfully.');
+                            } catch (error) {
+                                console.error('Error deleting client:', error);
+                                Alert.alert('Error', 'Failed to delete client');
+                            }
+                        },
+                    },
+                ]
+            );
+        },
+        [loadClients]
+    );
+
+    const renderItem = useCallback(
+        ({ item }: { item: Client }) => (
+            <SwipeableClientItem client={item} onEdit={handleEditClient} onDelete={handleDeleteClient}>
+                <ClientCard client={item} />
+            </SwipeableClientItem>
+        ),
+        [handleEditClient, handleDeleteClient]
+    );
+
+    if (loading) {
+        return (
+            <View className="flex-1 p-4 justify-center items-center">
+                <ActivityIndicator size="large" />
+            </View>
+        );
+    }
 
     return (
         <View className="flex-1 p-4">
             <Text className="text-xl font-bold mb-4">
-                {clients.length} Client{clients.length !== 1 && "s"}
+                {clients.length} Client{clients.length !== 1 ? 's' : ''}
             </Text>
+
             {clients.length > 0 ? (
                 <FlatList
                     data={clients}
-                    keyExtractor={item => item.id}
-                    renderItem={({ item }) => <ClientCard client={item} />}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItem}
                     refreshing={refreshing}
                     onRefresh={onRefresh}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: 96 }}
                 />
             ) : (
                 <EmptyState message="No clients yet. Add your first client!" />
             )}
+
             <TouchableOpacity
-                onPress={() => navigation.navigate({ name: 'AddClient', params: {} })}
+                onPress={() => navigation.navigate('AddClient', {})}
                 className="absolute bottom-6 right-6 bg-blue-600 rounded-full p-4 shadow-lg"
                 activeOpacity={0.85}
             >
