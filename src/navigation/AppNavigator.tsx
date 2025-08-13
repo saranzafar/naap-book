@@ -1,3 +1,4 @@
+// navigation/AppNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useColorScheme } from 'react-native';
@@ -7,11 +8,12 @@ import AddClientScreen from '../screens/AddClientScreen';
 import ClientDetailScreen from '../screens/ClientDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import EditClientScreen from '../screens/EditClientScreen';
+import { Client } from '../types/Client';
 
 export type RootStackParamList = {
   Home: undefined;
   AddClient: { clientId?: string };
-  ClientDetail: { clientId: string };
+  ClientDetail: { client: Client };
   EditClient: { clientId: string };
   Settings: undefined;
 };
@@ -26,7 +28,7 @@ const AppNavigator = () => {
     <Stack.Navigator
       initialRouteName="Home"
       screenOptions={{
-        headerShown: false, // We'll use custom headers in each screen
+        headerShown: false, // keep hidden by default
         contentStyle: {
           backgroundColor: isDark ? '#000000' : '#f9fafb',
         },
@@ -36,10 +38,9 @@ const AppNavigator = () => {
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={{
-          title: 'NaapBook',
-        }}
+        options={{ title: 'NaapBook' }}
       />
+
       <Stack.Screen
         name="AddClient"
         component={AddClientScreen}
@@ -49,6 +50,7 @@ const AppNavigator = () => {
           animation: 'slide_from_bottom',
         }}
       />
+
       <Stack.Screen
         name="EditClient"
         component={EditClientScreen}
@@ -58,13 +60,23 @@ const AppNavigator = () => {
           animation: 'slide_from_bottom',
         }}
       />
+
       <Stack.Screen
         name="ClientDetail"
         component={ClientDetailScreen}
-        options={{
-          title: 'Client Details',
-        }}
+        options={() => ({
+          headerShown: true,
+          title: 'Naap Details',
+          presentation: 'card',             
+          animation: 'slide_from_right',
+          headerStyle: {
+            backgroundColor: isDark ? '#0b0b0b' : '#ffffff',
+          },
+          headerTitleStyle: { fontWeight: '600' },
+          headerTintColor: isDark ? '#ffffff' : '#111827', // back arrow + title 
+        })}
       />
+
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}

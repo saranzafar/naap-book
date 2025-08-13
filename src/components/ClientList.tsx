@@ -3,14 +3,20 @@ import { FlatList } from 'react-native';
 import { Client } from '../types/Client';
 import ClientCard from './ClientCard';
 
-export default function ClientList({ clients }: { clients: Client[] }) {
+type Props = {
+    clients: Client[];
+    onItemPress: (client: Client) => void;
+};
+
+export default function ClientList({ clients, onItemPress }: Props) {
     return (
         <FlatList
             data={clients}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => <ClientCard client={item} />}
-            // contentContainerStyle={{ paddingBottom: 100 }}
-            className='pb-20'
+            keyExtractor={(item) => String(item.id)}
+            renderItem={({ item }) => (
+                <ClientCard client={item} onPress={() => onItemPress(item)} />
+            )}
+            className="pb-20"
         />
     );
 }
