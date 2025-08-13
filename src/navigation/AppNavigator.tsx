@@ -14,7 +14,7 @@ export type RootStackParamList = {
   Home: undefined;
   AddClient: { clientId?: string };
   ClientDetail: { client: Client };
-  EditClient: { clientId: string };
+  EditClient: { clientId: string; client?: Client }; 
   Settings: undefined;
 };
 
@@ -57,7 +57,7 @@ const AppNavigator = () => {
         options={{
           title: 'Edit Client',
           presentation: 'modal',
-          animation: 'slide_from_bottom',
+          animation: 'slide_from_right',
         }}
       />
 
@@ -67,7 +67,7 @@ const AppNavigator = () => {
         options={() => ({
           headerShown: true,
           title: 'Naap Details',
-          presentation: 'card',             
+          presentation: 'card',
           animation: 'slide_from_right',
           headerStyle: {
             backgroundColor: isDark ? '#0b0b0b' : '#ffffff',

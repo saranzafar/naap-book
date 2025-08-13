@@ -1,4 +1,6 @@
 import { MMKV } from 'react-native-mmkv';
+import { getClientByIdSync, readClients, writeClients } from '../services/StorageService';
+import { Client } from '../types/Client';
 // import { v4 as uuidv4 } from 'uuid';
 
 /* === TYPE DEFINITIONS === */
@@ -278,4 +280,41 @@ export function validateMeasurement(value: number, field: string): { isValid: bo
         return { isValid: false, error: `Value for ${field} must be between ${min} and ${max}.` };
     }
     return { isValid: true };
+}
+
+
+// Deep-ish merge that preserves nested measurements/custom_fields
+function mergeClient(current: Client, patch: Partial<Client>): Client {
+    const merged: Client = { ...current, ...patch, id: current.id };
+
+    if (patch.measurements) {
+        merged.measurements = {
+            ...(current.measurements || {}),
+            ...patch.measurements,
+            custom_fields: {
+                ...(current.measurements?.custom_fields || {}),
+                ...(patch.measurements as any)?.custom_fields,
+            },
+        } as any;
+    }
+    // Optional updated_at maintenance
+    if ('updated_at' in current) {
+        (merged as any).updated_at = new Date().toISOString();
+    }
+    return merged;
+}
+
+export async function getClientById(id: string): Promise<Client | null> {
+    return getClientByIdSync(id);
+}
+
+export async function updateClient(id: string, patch: Partial<Client>): Promise<Client> {
+    const list = readClients();
+    const idx = list.findIndex(c => String(c.id) === String(id));
+    if (idx === -1) throw new Error('Client not found');
+
+    const updated = mergeClient(list[idx], patch);
+    list[idx] = updated;
+    writeClients(list);
+    return updated;
 }

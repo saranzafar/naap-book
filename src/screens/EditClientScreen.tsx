@@ -1,12 +1,12 @@
-import React from 'react'
-import { Text } from 'react-native'
+// screens/EditClientScreen.tsx
+import React from 'react';
+import { useRoute, RouteProp } from '@react-navigation/native';
+import AddClientScreen from './AddClientScreen';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
-function EditClientScreen() {
-  return (
-    <Text>
-      Hi
-    </Text>
-  )
+type R = RouteProp<RootStackParamList, 'EditClient'>;
+
+export default function EditClientScreen() {
+  const { params } = useRoute<R>();
+  return <AddClientScreen mode="edit" clientId={params.clientId} />;
 }
-
-export default EditClientScreen

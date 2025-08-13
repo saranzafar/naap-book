@@ -1,247 +1,176 @@
-import React, { JSX } from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
-import { Measurements, MeasurementField, CustomField } from "../types/Client";
-import { Plus, Trash2 } from "lucide-react-native";
+// src/components/MeasurementsForm.tsx
+import React, { useCallback } from 'react';
+import { View, Text, TextInput, Pressable } from 'react-native';
+import { Plus, Trash2 } from 'lucide-react-native';
+import uuid from 'react-native-uuid';
 
-type Props = {
-  values: Measurements;
-  onChange: (values: Measurements) => void;
+// Local UI types (strings while editing)
+type EntryStr = { value: string; notes?: string };
+type CustomFieldStr = { _key?: string; name: string; value: string; notes?: string };
+type MeasurementsUI = {
+  chest?: EntryStr;
+  shoulder?: EntryStr;
+  arm_length?: EntryStr;
+  collar?: EntryStr;
+  shirt_length?: EntryStr;
+  waist?: EntryStr;
+  hips?: EntryStr;
+  trouser_length?: EntryStr;
+  inseam?: EntryStr;
+  custom_fields: CustomFieldStr[];
 };
 
-type StdKey =
-  | "chest"
-  | "shoulder"
-  | "arm_length"
-  | "collar"
-  | "shirt_length"
-  | "waist"
-  | "hips"
-  | "trouser_length"
-  | "inseam";
+const MEAS_KEYS: Array<{ key: keyof MeasurementsUI; label: string }> = [
+  { key: 'chest', label: 'Chest / Bust' },
+  { key: 'shoulder', label: 'Shoulder' },
+  { key: 'arm_length', label: 'Arm Length' },
+  { key: 'collar', label: 'Collar / Neck' },
+  { key: 'shirt_length', label: 'Shirt Length' },
+  { key: 'waist', label: 'Waist' },
+  { key: 'hips', label: 'Hips' },
+  { key: 'trouser_length', label: 'Trouser Length' },
+  { key: 'inseam', label: 'Inseam' },
+];
 
-const LABELS: Record<StdKey, string> = {
-  chest: "Chest / Bust",
-  shoulder: "Shoulder",
-  arm_length: "Arm Length",
-  collar: "Collar / Neck",
-  shirt_length: "Shirt Length",
-  waist: "Waist",
-  hips: "Hips",
-  trouser_length: "Trouser Length",
-  inseam: "Inseam",
-};
+export default function MeasurementsForm({
+  value,
+  onChange,
+}: {
+  value: MeasurementsUI;
+  onChange: (next: MeasurementsUI) => void;
+}) {
+  const updateStd = useCallback(
+    (k: keyof MeasurementsUI, field: keyof EntryStr, text: string) => {
+      const cur = (value[k] as EntryStr) || { value: '', notes: '' };
+      onChange({ ...value, [k]: { ...cur, [field]: text } });
+    },
+    [value, onChange]
+  );
 
-export default function MeasurementsForm({ values, onChange }: Props) {
-  const upsertStd = (key: StdKey, patch: Partial<MeasurementField>) => {
-    const current: MeasurementField = {
-      value: values[key]?.value ?? 0,
-      notes: values[key]?.notes ?? "",
-    };
-    onChange({ ...values, [key]: { ...current, ...patch } });
-  };
+  const addCustom = useCallback(() => {
+    const list = value.custom_fields || [];
+    const next = [
+      ...list,
+      { _key: String(uuid.v4()), name: '', value: '', notes: '' } as CustomFieldStr,
+    ];
+    onChange({ ...value, custom_fields: next });
+  }, [value, onChange]);
 
-  const stdKeys = Object.keys(LABELS) as StdKey[];
+  const updateCustom = useCallback(
+    (idx: number, field: keyof CustomFieldStr, text: string) => {
+      const list = [...(value.custom_fields || [])];
+      const row = { ...(list[idx] || { _key: String(uuid.v4()), name: '', value: '', notes: '' }) };
+      (row as any)[field] = text;
+      list[idx] = row;
+      onChange({ ...value, custom_fields: list });
+    },
+    [value, onChange]
+  );
 
-  const addCustomField = () => {
-    const id = `field_${Date.now()}`;
-    const cf: CustomField = { name: "", value: 0, notes: "" };
-    onChange({
-      ...values,
-      custom_fields: { ...(values.custom_fields || {}), [id]: cf },
-    });
-  };
-
-  const updateCustomField = (id: string, patch: Partial<CustomField>) => {
-    const cur = values.custom_fields?.[id] || { name: "", value: 0, notes: "" };
-    onChange({
-      ...values,
-      custom_fields: {
-        ...(values.custom_fields || {}),
-        [id]: { ...cur, ...patch },
-      },
-    });
-  };
-
-  const removeCustomField = (id: string) => {
-    const next = { ...(values.custom_fields || {}) };
-    delete next[id];
-    onChange({ ...values, custom_fields: next });
-  };
+  const removeCustom = useCallback(
+    (idx: number) => {
+      const list = [...(value.custom_fields || [])];
+      list.splice(idx, 1);
+      onChange({ ...value, custom_fields: list });
+    },
+    [value, onChange]
+  );
 
   return (
-    <View className="">
-      {/* Standard Measurements */}
-      <View className="space-y-2">
-        {stdKeys.reduce((acc, key, index) => {
-          if (index % 2 === 0) {
-            const nextKey = stdKeys[index + 1];
-            acc.push(
-              <View key={`pair-${index}`} className="flex-row gap-2 mb-2">
-                {/* First measurement */}
-                <View className="flex-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600 p-3">
-                  <Text className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {LABELS[key]}
-                  </Text>
-                  <TextInput
-                    placeholder="0"
-                    keyboardType="numeric"
-                    value={String(values[key]?.value ?? "")}
-                    onChangeText={(txt) =>
-                      upsertStd(key, { value: Number(txt.replace(/[^0-9.]/g, "")) || 0 })
-                    }
-                    className="bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded px-3 py-2 text-gray-900 dark:text-white text-sm mb-2"
-                  />
-                  <TextInput
-                    placeholder="Notes..."
-                    value={values[key]?.notes ?? ""}
-                    onChangeText={(txt) => upsertStd(key, { notes: txt })}
-                    className="bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded px-3 py-1.5 text-gray-900 dark:text-white text-xs"
-                  />
-                </View>
+    <View className="mt-3">
+      <Text className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Measurements</Text>
 
-                {/* Second measurement */}
-                {nextKey ? (
-                  <View className="flex-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600 p-3">
-                    <Text className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {LABELS[nextKey]}
-                    </Text>
-                    <TextInput
-                      placeholder="0"
-                      keyboardType="numeric"
-                      value={String(values[nextKey]?.value ?? "")}
-                      onChangeText={(txt) =>
-                        upsertStd(nextKey, { value: Number(txt.replace(/[^0-9.]/g, "")) || 0 })
-                      }
-                      className="bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded px-3 py-2 text-gray-900 dark:text-white text-sm mb-2"
-                    />
-                    <TextInput
-                      placeholder="Notes..."
-                      value={values[nextKey]?.notes ?? ""}
-                      onChangeText={(txt) => upsertStd(nextKey, { notes: txt })}
-                      className="bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded px-3 py-1.5 text-gray-900 dark:text-white text-xs"
-                    />
-                  </View>
-                ) : (
-                  <View className="flex-1" />
-                )}
+      {/* Standard fields grid */}
+      <View className="flex-row flex-wrap -mx-1">
+        {MEAS_KEYS.map(({ key, label }) => {
+          const e = (value[key] as EntryStr) || { value: '', notes: '' };
+          return (
+            <View key={String(key)} className="w-full md:w-1/2 px-1 mb-2">
+              <View className="border rounded-xl p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                <Text className="text-gray-500 text-[12px] mb-2">{label}</Text>
+
+                <TextInput
+                  value={e.value}
+                  onChangeText={(t) => updateStd(key, 'value', t)}
+                  keyboardType="decimal-pad"
+                  placeholder="Value"
+                  placeholderTextColor="#9ca3af"
+                  blurOnSubmit={false}
+                  className="border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                />
+
+                <TextInput
+                  value={e.notes}
+                  onChangeText={(t) => updateStd(key, 'notes', t)}
+                  placeholder="Notes"
+                  placeholderTextColor="#9ca3af"
+                  blurOnSubmit={false}
+                  multiline
+                  className="mt-2 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                />
               </View>
-            );
-          }
-          return acc;
-        }, [] as JSX.Element[])}
+            </View>
+          );
+        })}
       </View>
 
-      {/* Custom Fields Section */}
-      <View>
-        <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-lg font-semibold text-gray-900 dark:text-white">
-            Custom Fields
-          </Text>
-          <TouchableOpacity
-            onPress={addCustomField}
-            className="bg-blue-500 px-3 py-2 rounded-lg flex-row items-center space-x-1"
-            activeOpacity={0.8}
+      {/* Custom fields */}
+      <View className="mt-4">
+        <View className="flex-row items-center justify-between mb-2">
+          <Text className="text-lg font-semibold text-gray-900 dark:text-white">Custom Fields</Text>
+          <Pressable
+            onPress={addCustom}
+            className="px-3 h-9 rounded-full bg-blue-500/80 dark:bg-blue-400/70 items-center justify-center flex-row"
           >
-            <Plus color="white" size={16} />
-            <Text className="text-white font-medium text-sm">Add</Text>
-          </TouchableOpacity>
+            <Plus size={16} color="#fff" />
+            <Text className="text-white font-semibold ml-2">Add</Text>
+          </Pressable>
         </View>
 
-        {Object.entries(values.custom_fields || {}).length === 0 ? (
-          <View className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600 border-dashed">
-            <Text className="text-gray-500 dark:text-gray-400 text-center text-sm">
-              No custom fields added yet
-            </Text>
-          </View>
+        {(value.custom_fields || []).length === 0 ? (
+          <Text className="text-gray-500">No custom fields.</Text>
         ) : (
-          <View className="space-y-3">
-            {Object.entries(values.custom_fields || {}).reduce((acc, [id, field], index) => {
-              if (index % 2 === 0) {
-                const entries = Object.entries(values.custom_fields || {});
-                const nextEntry = entries[index + 1];
+          <View className="gap-2">
+            {(value.custom_fields || []).map((cf, idx) => (
+              <View key={cf._key || String(idx)} className="border rounded-xl p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                <View className="flex-row gap-2">
+                  <TextInput
+                    value={cf.name}
+                    onChangeText={(t) => updateCustom(idx, 'name', t)}
+                    placeholder="Name (e.g., Sleeve Width)"
+                    placeholderTextColor="#9ca3af"
+                    blurOnSubmit={false}
+                    className="flex-1 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                  />
+                  <Pressable
+                    onPress={() => removeCustom(idx)}
+                    className="w-10 h-10 rounded-lg bg-red-600 items-center justify-center"
+                  >
+                    <Trash2 size={16} color="#fff" />
+                  </Pressable>
+                </View>
 
-                acc.push(
-                  <View key={`custom-pair-${index}`} className="flex-row gap-3">
-                    {/* First custom field */}
-                    <View className="flex-1 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-3">
-                      <View className="flex-row items-center gap-2 mb-2">
-                        <TextInput
-                          placeholder="Field name"
-                          value={field.name}
-                          onChangeText={(txt) => updateCustomField(id, { name: txt })}
-                          className="flex-1 bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded px-3 py-1.5 text-gray-900 dark:text-white text-xs"
-                        />
-                        <TouchableOpacity
-                          onPress={() => removeCustomField(id)}
-                          className="bg-red-500 px-2 py-1.5 rounded"
-                          activeOpacity={0.8}
-                        >
-                          <Trash2 color="white" size={12} />
-                        </TouchableOpacity>
-                      </View>
-                      <TextInput
-                        placeholder="0"
-                        keyboardType="numeric"
-                        value={String(field.value ?? "")}
-                        onChangeText={(txt) =>
-                          updateCustomField(id, {
-                            value: Number(txt.replace(/[^0-9.]/g, "")) || 0,
-                          })
-                        }
-                        className="bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded px-3 py-2 text-gray-900 dark:text-white text-sm mb-2"
-                      />
-                      <TextInput
-                        placeholder="Notes..."
-                        value={field.notes ?? ""}
-                        onChangeText={(txt) => updateCustomField(id, { notes: txt })}
-                        className="bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded px-3 py-1.5 text-gray-900 dark:text-white text-xs"
-                      />
-                    </View>
+                <TextInput
+                  value={cf.value}
+                  onChangeText={(t) => updateCustom(idx, 'value', t)}
+                  keyboardType="decimal-pad"
+                  placeholder="Value"
+                  placeholderTextColor="#9ca3af"
+                  blurOnSubmit={false}
+                  className="mt-2 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                />
 
-                    {/* Second custom field */}
-                    {nextEntry ? (
-                      <View className="flex-1 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-3">
-                        <View className="flex-row items-center gap-2 mb-2">
-                          <TextInput
-                            placeholder="Field name"
-                            value={nextEntry[1].name}
-                            onChangeText={(txt) => updateCustomField(nextEntry[0], { name: txt })}
-                            className="flex-1 bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded px-3 py-1.5 text-gray-900 dark:text-white text-xs"
-                          />
-                          <TouchableOpacity
-                            onPress={() => removeCustomField(nextEntry[0])}
-                            className="bg-red-500 px-2 py-1.5 rounded"
-                            activeOpacity={0.8}
-                          >
-                            <Trash2 color="white" size={12} />
-                          </TouchableOpacity>
-                        </View>
-                        <TextInput
-                          placeholder="0"
-                          keyboardType="numeric"
-                          value={String(nextEntry[1].value ?? "")}
-                          onChangeText={(txt) =>
-                            updateCustomField(nextEntry[0], {
-                              value: Number(txt.replace(/[^0-9.]/g, "")) || 0,
-                            })
-                          }
-                          className="bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded px-3 py-2 text-gray-900 dark:text-white text-sm mb-2"
-                        />
-                        <TextInput
-                          placeholder="Notes..."
-                          value={nextEntry[1].notes ?? ""}
-                          onChangeText={(txt) => updateCustomField(nextEntry[0], { notes: txt })}
-                          className="bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded px-3 py-1.5 text-gray-900 dark:text-white text-xs"
-                        />
-                      </View>
-                    ) : (
-                      <View className="flex-1" />
-                    )}
-                  </View>
-                );
-              }
-              return acc;
-            }, [] as JSX.Element[])}
+                <TextInput
+                  value={cf.notes}
+                  onChangeText={(t) => updateCustom(idx, 'notes', t)}
+                  placeholder="Notes"
+                  placeholderTextColor="#9ca3af"
+                  blurOnSubmit={false}
+                  multiline
+                  className="mt-2 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                />
+              </View>
+            ))}
           </View>
         )}
       </View>

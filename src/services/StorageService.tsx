@@ -5,6 +5,7 @@ import { Client, AddClientFormValues, Measurements } from '../types/Client';
 // ---------- MMKV ----------
 const storage = new MMKV({ id: 'naapbook' });
 const ROOT_KEY = 'naapbook_data';
+const CLIENTS_KEY = 'clients';
 
 // ---------- Internal shapes ----------
 type UsersMap = Record<string, Client>;
@@ -169,4 +170,114 @@ export async function deleteClient(id: string): Promise<void> {
 
   // NOTE: we DON'T decrement next_client_seq — IDs are monotonically increasing.
   setRootData(data);
+}
+
+
+export function readClients(): Client[] {
+  const raw = storage.getString(CLIENTS_KEY);
+  if (!raw) return [];
+  try { return JSON.parse(raw) as Client[]; } catch { return []; }
+}
+
+export function writeClients(list: Client[]): void {
+  storage.set(CLIENTS_KEY, JSON.stringify(list));
+}
+
+export function getClientByIdSync(id: string): Client | null {
+  const list = readClients();
+  return list.find(c => String(c.id) === String(id)) ?? null;
+}
+
+// Copy legacy array into root map once, then delete the old key.
+function migrateClientsArrayIntoRoot(): void {
+  const raw = storage.getString(CLIENTS_KEY);
+  if (!raw) return;
+
+  let arr: Client[] = [];
+  try { arr = JSON.parse(raw) as Client[]; } catch { arr = []; }
+  if (!arr.length) {
+    storage.delete(CLIENTS_KEY);
+    return;
+  }
+
+  const data = getRootData();
+  let changed = false;
+
+  for (const c of arr) {
+    const id = String(c.id);
+    if (!data.users[id]) {
+      data.users[id] = c;
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    if (!data.app_metadata) data.app_metadata = {};
+    data.app_metadata.total_clients = Object.keys(data.users).length;
+    data.app_metadata.last_backup = new Date().toISOString();
+    ensureNextSeq(data); // keep n-<seq> correct
+    setRootData(data);
+  }
+
+  // Clear legacy key so we never read it again.
+  storage.delete(CLIENTS_KEY);
+}
+
+// Run migration once at module load
+try { migrateClientsArrayIntoRoot(); } catch { /* ignore */ }
+
+// ----------------- Lookup & Update on ROOT MAP ONLY -----------------
+
+// Deep-ish merge that preserves nested measurement/custom_fields trees
+function mergeClient(current: Client, patch: Partial<Client>): Client {
+  const merged: Client = { ...current, ...patch, id: current.id };
+
+  if (patch.measurements) {
+    merged.measurements = {
+      ...(current.measurements || {}),
+      ...patch.measurements,
+      custom_fields: {
+        ...(current.measurements?.custom_fields || {}),
+        ...(patch.measurements as any)?.custom_fields,
+      },
+    } as any;
+  }
+
+  // bump updated_at if your model has it
+  if ('updated_at' in current) {
+    (merged as any).updated_at = new Date().toISOString();
+  }
+  return merged;
+}
+
+export async function getClientById(id: string): Promise<Client | null> {
+  // Safety: migration already ran once, but harmless to call again
+  migrateClientsArrayIntoRoot();
+
+  const data = getRootData();
+  const key = String(id);
+  return data.users[key] ?? null;
+}
+
+export async function updateClient(id: string, patch: Partial<Client>): Promise<Client> {
+  migrateClientsArrayIntoRoot();
+
+  const data = getRootData();
+  const key = String(id);
+  const current = data.users[key];
+
+  console.log('id for update', key);
+  console.log('Users keys in root:', Object.keys(data.users));
+
+  if (!current) throw new Error('Client not found');
+
+  const updated = mergeClient(current, patch);
+  data.users[key] = updated;
+
+  if (!data.app_metadata) data.app_metadata = {};
+  data.app_metadata.total_clients = Object.keys(data.users).length;
+  data.app_metadata.last_backup = new Date().toISOString();
+
+  setRootData(data);
+  return updated;
 }

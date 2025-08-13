@@ -57,12 +57,20 @@ export default function HomeScreen() {
         loadClients({ showSpinner: false });
     }, [loadClients]);
 
+    // const handleEditClient = useCallback(
+    //     (client: Client) => {
+    //         navigation.navigate('EditClient', { clientId: client.id });
+    //     },
+    //     [navigation]
+    // );
+
     const handleEditClient = useCallback(
         (client: Client) => {
-            navigation.navigate('EditClient', { clientId: client.id });
+            navigation.navigate('EditClient', { clientId: String(client.id), client }); 
         },
         [navigation]
     );
+
 
     const handleDeleteClient = useCallback(
         (client: Client) => {

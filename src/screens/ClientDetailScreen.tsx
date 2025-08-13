@@ -44,8 +44,8 @@ export default function ClientDetailScreen() {
     const customFields: Array<any> = Object.values(measurements.custom_fields || {});
 
     const onEdit = useCallback(() => {
-        navigation.navigate('EditClient', { clientId: client.id });
-    }, [navigation, client.id]);
+        navigation.navigate('EditClient', { clientId: String(client.id), client })
+    }, [navigation, client]);
 
     const onDelete = useCallback(() => {
         Alert.alert(
