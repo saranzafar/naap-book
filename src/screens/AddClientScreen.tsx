@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { ScrollView, View, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
+import { CommonActions } from '@react-navigation/native';
 
 import AddClientForm from '../components/AddClientForm';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -69,10 +70,17 @@ export default function AddClientScreen(props: { mode?: 'add' | 'edit'; clientId
                     Toast.show({ type: 'success', text1: 'Client updated' });
                 } else {
                     const payload = toNewClientPayload(formValues);
-                    await addClient(payload);
+                    await addClient(payload, payload.measurements);
                     Toast.show({ type: 'success', text1: 'Client added' });
                 }
-                navigation.goBack();
+                // navigation.goBack();
+                Toast.show({ type: 'success', text1: mode === 'edit' ? 'Client updated' : 'Client added' });
+                navigation.dispatch(
+                    CommonActions.reset({
+                        index: 0,
+                        routes: [{ name: 'Home' }],
+                    })
+                );
             } catch (e: any) {
                 Toast.show({ type: 'error', text1: e?.message ?? 'Save failed' });
             }
@@ -113,7 +121,7 @@ function entryToStrings(e?: MeasurementEntry) {
 function toFormValues(client: Client) {
     const m = client.measurements || {};
     const cfObj = m.custom_fields || {};
-    const custom_fields = Object.entries(cfObj).map(([key, cf]) => ({
+    const custom_fields = Object.entries(cfObj)?.map(([key, cf]) => ({
         _key: key, // preserve original key if present
         name: cf.name || '',
         value: cf.value != null ? String(cf.value) : '',

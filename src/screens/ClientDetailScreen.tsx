@@ -139,7 +139,7 @@ export default function ClientDetailScreen() {
                 {/* Measurements */}
                 <Section title="Measurements">
                     <View className="flex-row flex-wrap -mx-1">
-                        {rows.map(({ key, label }) => {
+                        {rows?.map(({ key, label }) => {
                             const v = (measurements as any)?.[key];
                             const value = v?.value ?? null;
                             const unit = v?.unit ?? '';
@@ -167,7 +167,7 @@ export default function ClientDetailScreen() {
                 {customFields.length > 0 && (
                     <Section title="Custom Fields">
                         <View className="flex-row flex-wrap -mx-1">
-                            {customFields.map((cf: any, i: number) => (
+                            {customFields?.map((cf: any, i: number) => (
                                 <View key={i} className="w-1/2 px-1 mb-2">
                                     <Card>
                                         <Text className="text-[12px] text-gray-500">{cf?.name || 'Custom'}</Text>

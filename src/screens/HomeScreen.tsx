@@ -1,11 +1,9 @@
-// screens/HomeScreen.tsx
 import React, { useCallback, useState } from 'react';
-import {
-    View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert, } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Plus } from 'lucide-react-native';
+import Toast from 'react-native-toast-message';
 
 import { getAllClients, deleteClient } from '../services/StorageService';
 import ClientCard from '../components/ClientCard';
@@ -57,20 +55,12 @@ export default function HomeScreen() {
         loadClients({ showSpinner: false });
     }, [loadClients]);
 
-    // const handleEditClient = useCallback(
-    //     (client: Client) => {
-    //         navigation.navigate('EditClient', { clientId: client.id });
-    //     },
-    //     [navigation]
-    // );
-
     const handleEditClient = useCallback(
         (client: Client) => {
-            navigation.navigate('EditClient', { clientId: String(client.id), client }); 
+            navigation.navigate('EditClient', { clientId: String(client.id), client });
         },
         [navigation]
     );
-
 
     const handleDeleteClient = useCallback(
         (client: Client) => {
@@ -86,10 +76,10 @@ export default function HomeScreen() {
                             try {
                                 await deleteClient(client.id);
                                 await loadClients({ showSpinner: false });
-                                Alert.alert('Deleted', 'Client deleted successfully.');
+                                Toast.show({ type: 'success', text1: 'Record Deleted Successfully!' });
                             } catch (error) {
                                 console.error('Error deleting client:', error);
-                                Alert.alert('Error', 'Failed to delete client');
+                                Toast.show({ type: 'error', text1: 'Failed to delete Record!' });
                             }
                         },
                     },

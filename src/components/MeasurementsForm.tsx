@@ -82,7 +82,7 @@ export default function MeasurementsForm({
 
       {/* Standard fields grid */}
       <View className="flex-row flex-wrap -mx-1">
-        {MEAS_KEYS.map(({ key, label }) => {
+        {MEAS_KEYS?.map(({ key, label }) => {
           const e = (value[key] as EntryStr) || { value: '', notes: '' };
           return (
             <View key={String(key)} className="w-full md:w-1/2 px-1 mb-2">
@@ -131,7 +131,7 @@ export default function MeasurementsForm({
           <Text className="text-gray-500">No custom fields.</Text>
         ) : (
           <View className="gap-2">
-            {(value.custom_fields || []).map((cf, idx) => (
+            {(value.custom_fields || [])?.map((cf, idx) => (
               <View key={cf._key || String(idx)} className="border rounded-xl p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
                 <View className="flex-row gap-2">
                   <TextInput
