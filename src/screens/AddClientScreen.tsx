@@ -8,7 +8,7 @@ import { CommonActions } from '@react-navigation/native';
 import AddClientForm from '../components/AddClientForm';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getClientById, updateClient, addClient } from '../services/StorageService';
-import type { Client, MeasurementEntry } from '../types/Client';
+import type { Client, AddClientFormValues, MeasurementFieldInput, CustomFieldInput } from '../types/Client';
 
 type AddRoute = RouteProp<RootStackParamList, 'AddClient'>;
 type EditRoute = RouteProp<RootStackParamList, 'EditClient'>;
@@ -27,7 +27,7 @@ export default function AddClientScreen(props: { mode?: 'add' | 'edit'; clientId
 
     const mode: 'add' | 'edit' = props.mode ?? (clientId ? 'edit' : 'add');
 
-    const [initialValues, setInitialValues] = useState<any | null>(null);
+    const [initialValues, setInitialValues] = useState<AddClientFormValues | null>(null);
     const [loading, setLoading] = useState(mode === 'edit' && !clientParam);
 
     useEffect(() => {
@@ -49,7 +49,8 @@ export default function AddClientScreen(props: { mode?: 'add' | 'edit'; clientId
                     return;
                 }
                 setInitialValues(toFormValues(client));
-            } catch {
+            } catch (error) {
+                console.error('Failed to load client:', error);
                 Toast.show({ type: 'error', text1: 'Failed to load client' });
                 navigation.goBack();
             } finally {
@@ -59,22 +60,27 @@ export default function AddClientScreen(props: { mode?: 'add' | 'edit'; clientId
     }, [mode, clientId, clientParam, navigation]);
 
     const handleSubmit = useCallback(
-        async (formValues: any) => {
+        async (formValues: AddClientFormValues) => {
             try {
+                console.log('Submitting form values:', JSON.stringify(formValues, null, 2));
+
                 if (mode === 'edit') {
                     const idForUpdate = String(clientId ?? clientParam?.id);
-                    console.log("id for update", idForUpdate);
+                    if (!idForUpdate) {
+                        throw new Error('No client ID found for update');
+                    }
 
-                    const patch = toClientPatch(formValues);
-                    await updateClient(idForUpdate, patch);
-                    Toast.show({ type: 'success', text1: 'Client updated' });
+                    console.log("Updating client with id:", idForUpdate);
+
+                    await updateClient(idForUpdate, formValues);
+                    Toast.show({ type: 'success', text1: 'Client updated successfully' });
                 } else {
-                    const payload = toNewClientPayload(formValues);
-                    await addClient(payload, payload.measurements);
-                    Toast.show({ type: 'success', text1: 'Client added' });
+                    console.log("Adding new client");
+                    await addClient(formValues);
+                    Toast.show({ type: 'success', text1: 'Client added successfully' });
                 }
-                // navigation.goBack();
-                Toast.show({ type: 'success', text1: mode === 'edit' ? 'Client updated' : 'Client added' });
+
+                // Navigate back to home
                 navigation.dispatch(
                     CommonActions.reset({
                         index: 0,
@@ -82,7 +88,12 @@ export default function AddClientScreen(props: { mode?: 'add' | 'edit'; clientId
                     })
                 );
             } catch (e: any) {
-                Toast.show({ type: 'error', text1: e?.message ?? 'Save failed' });
+                console.error('Submit error:', e);
+                Toast.show({
+                    type: 'error',
+                    text1: 'Save failed',
+                    text2: e?.message ?? 'Unknown error occurred'
+                });
             }
         },
         [mode, clientId, clientParam, navigation]
@@ -110,22 +121,22 @@ export default function AddClientScreen(props: { mode?: 'add' | 'edit'; clientId
 
 /* ---------------- mapping helpers ---------------- */
 
-function entryToStrings(e?: MeasurementEntry) {
+function measurementToInput(m?: { value?: number; notes?: string }): MeasurementFieldInput {
     return {
-        value: e?.value != null ? String(e.value) : '',
-        unit: e?.unit ?? '',
-        notes: e?.notes ?? '',
+        value: m?.value != null ? String(m.value) : '',
+        notes: m?.notes ?? '',
     };
 }
 
-function toFormValues(client: Client) {
+function toFormValues(client: Client): AddClientFormValues {
     const m = client.measurements || {};
     const cfObj = m.custom_fields || {};
-    const custom_fields = Object.entries(cfObj)?.map(([key, cf]) => ({
-        _key: key, // preserve original key if present
+
+    // Convert custom fields object to array for editing
+    const custom_fields: CustomFieldInput[] = Object.entries(cfObj).map(([key, cf]) => ({
+        _key: key,
         name: cf.name || '',
         value: cf.value != null ? String(cf.value) : '',
-        unit: cf.unit ?? '',
         notes: cf.notes ?? '',
     }));
 
@@ -136,93 +147,16 @@ function toFormValues(client: Client) {
         address: client.address ?? '',
         notes: client.notes ?? '',
         measurements: {
-            chest: entryToStrings(m.chest),
-            shoulder: entryToStrings(m.shoulder),
-            arm_length: entryToStrings(m.arm_length),
-            collar: entryToStrings(m.collar),
-            shirt_length: entryToStrings(m.shirt_length),
-            waist: entryToStrings(m.waist),
-            hips: entryToStrings(m.hips),
-            trouser_length: entryToStrings(m.trouser_length),
-            inseam: entryToStrings(m.inseam),
-            custom_fields, // array for editing UI
+            chest: measurementToInput(m.chest),
+            shoulder: measurementToInput(m.shoulder),
+            arm_length: measurementToInput(m.arm_length),
+            collar: measurementToInput(m.collar),
+            shirt_length: measurementToInput(m.shirt_length),
+            waist: measurementToInput(m.waist),
+            hips: measurementToInput(m.hips),
+            trouser_length: measurementToInput(m.trouser_length),
+            inseam: measurementToInput(m.inseam),
+            custom_fields,
         },
     };
-}
-
-function toClientPatch(values: any) {
-    const s = values.measurements || {};
-    return {
-        name: values.name?.trim(),
-        phone: values.phone?.trim(),
-        email: values.email?.trim(),
-        address: values.address?.trim(),
-        notes: values.notes?.trim(),
-        measurements: {
-            chest: strEntryToNum(s.chest),
-            shoulder: strEntryToNum(s.shoulder),
-            arm_length: strEntryToNum(s.arm_length),
-            collar: strEntryToNum(s.collar),
-            shirt_length: strEntryToNum(s.shirt_length),
-            waist: strEntryToNum(s.waist),
-            hips: strEntryToNum(s.hips),
-            trouser_length: strEntryToNum(s.trouser_length),
-            inseam: strEntryToNum(s.inseam),
-            custom_fields: arrayToObject(s.custom_fields),
-        },
-    };
-}
-
-function toNewClientPayload(values: any) {
-    const now = new Date().toISOString();
-    const s = values.measurements || {};
-    return {
-        name: values.name?.trim(),
-        phone: values.phone?.trim() || undefined,
-        email: values.email?.trim() || undefined,
-        address: values.address?.trim() || undefined,
-        notes: values.notes?.trim() || undefined,
-        created_at: now,
-        updated_at: now,
-        measurements: {
-            chest: strEntryToNum(s.chest),
-            shoulder: strEntryToNum(s.shoulder),
-            arm_length: strEntryToNum(s.arm_length),
-            collar: strEntryToNum(s.collar),
-            shirt_length: strEntryToNum(s.shirt_length),
-            waist: strEntryToNum(s.waist),
-            hips: strEntryToNum(s.hips),
-            trouser_length: strEntryToNum(s.trouser_length),
-            inseam: strEntryToNum(s.inseam),
-            custom_fields: arrayToObject(s.custom_fields),
-        },
-    };
-}
-
-function strEntryToNum(e?: { value?: string; unit?: string; notes?: string }): MeasurementEntry | undefined {
-    if (!e) return undefined;
-    const hasValue = e.value != null && String(e.value).trim() !== '';
-    const num = hasValue ? Number(String(e.value).replace(',', '.')) : undefined;
-    const out: MeasurementEntry = {};
-    if (Number.isFinite(num!)) out.value = num!;
-    if (e.unit?.trim()) out.unit = e.unit.trim();
-    if (e.notes?.trim()) out.notes = e.notes.trim();
-    return Object.keys(out).length ? out : undefined;
-}
-
-function arrayToObject(arr?: Array<any>) {
-    if (!Array.isArray(arr)) return undefined;
-    const obj: Record<string, any> = {};
-    arr.forEach((item, idx) => {
-        const key = (item?._key as string) || safeKey(item?.name, idx);
-        const m = strEntryToNum({ value: item?.value, unit: item?.unit, notes: item?.notes });
-        if (!item?.name && !m) return;
-        obj[key] = { name: (item?.name || '').trim(), ...(m || {}) };
-    });
-    return Object.keys(obj).length ? obj : {};
-}
-
-function safeKey(name?: string, idx?: number) {
-    const base = (name || `custom_${idx ?? 0}`).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-    return base || `custom_${idx ?? 0}`;
 }

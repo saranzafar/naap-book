@@ -1,32 +1,32 @@
-// types/clients.ts
+// types/Client.ts
 
 /** ---------- Domain (persisted) types ---------- */
 
-export interface MeasurementField {
-    /** Optional so empty fields don’t force 0 and so patches can omit */
+export interface MeasurementEntry {
+    /** Optional so empty fields don't force 0 and so patches can omit */
     value?: number;
     notes?: string;
 }
 
-export interface CustomField extends MeasurementField {
+export interface CustomField extends MeasurementEntry {
     name: string;
 }
 
 /**
  * Make each measurement optional so:
- * - new clients don’t need to fill all
+ * - new clients don't need to fill all
  * - partial updates (edit) can deep-merge safely
  */
 export interface Measurements {
-    chest?: MeasurementField;
-    shoulder?: MeasurementField;
-    arm_length?: MeasurementField;
-    collar?: MeasurementField;
-    shirt_length?: MeasurementField;
-    waist?: MeasurementField;
-    hips?: MeasurementField;
-    trouser_length?: MeasurementField;
-    inseam?: MeasurementField;
+    chest?: MeasurementEntry;
+    shoulder?: MeasurementEntry;
+    arm_length?: MeasurementEntry;
+    collar?: MeasurementEntry;
+    shirt_length?: MeasurementEntry;
+    waist?: MeasurementEntry;
+    hips?: MeasurementEntry;
+    trouser_length?: MeasurementEntry;
+    inseam?: MeasurementEntry;
 
     /** Stored as a map in storage for stable keys */
     custom_fields?: Record<string, CustomField>;
@@ -91,5 +91,8 @@ export interface AddClientFormValues {
 /** Optional: a handy type for updateClient patch payloads */
 export type ClientPatch =
     Partial<Omit<Client, 'id' | 'created_at' | 'updated_at'>> & {
-        measurements?: Measurements;
+        measurements?: Partial<Measurements>;
     };
+
+// Legacy aliases for backward compatibility
+export type MeasurementField = MeasurementEntry;

@@ -1,26 +1,13 @@
 // src/components/MeasurementsForm.tsx
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
 import { Plus, Trash2 } from 'lucide-react-native';
 import uuid from 'react-native-uuid';
 
-// Local UI types (strings while editing)
-type EntryStr = { value: string; notes?: string };
-type CustomFieldStr = { _key?: string; name: string; value: string; notes?: string };
-type MeasurementsUI = {
-  chest?: EntryStr;
-  shoulder?: EntryStr;
-  arm_length?: EntryStr;
-  collar?: EntryStr;
-  shirt_length?: EntryStr;
-  waist?: EntryStr;
-  hips?: EntryStr;
-  trouser_length?: EntryStr;
-  inseam?: EntryStr;
-  custom_fields: CustomFieldStr[];
-};
+// Use the proper types from Client.ts
+import { MeasurementFieldInput, CustomFieldInput, MeasurementsFormValues } from '../types/Client';
 
-const MEAS_KEYS: Array<{ key: keyof MeasurementsUI; label: string }> = [
+const MEAS_KEYS: Array<{ key: keyof Omit<MeasurementsFormValues, 'custom_fields'>; label: string }> = [
   { key: 'chest', label: 'Chest / Bust' },
   { key: 'shoulder', label: 'Shoulder' },
   { key: 'arm_length', label: 'Arm Length' },
@@ -36,44 +23,61 @@ export default function MeasurementsForm({
   value,
   onChange,
 }: {
-  value: MeasurementsUI;
-  onChange: (next: MeasurementsUI) => void;
+  value: MeasurementsFormValues;
+  onChange: (next: MeasurementsFormValues) => void;
 }) {
+  // Ensure value has proper structure - wrapped in useMemo to prevent recreation
+  const safeValue: MeasurementsFormValues = useMemo(() => ({
+    chest: value?.chest || { value: '', notes: '' },
+    shoulder: value?.shoulder || { value: '', notes: '' },
+    arm_length: value?.arm_length || { value: '', notes: '' },
+    collar: value?.collar || { value: '', notes: '' },
+    shirt_length: value?.shirt_length || { value: '', notes: '' },
+    waist: value?.waist || { value: '', notes: '' },
+    hips: value?.hips || { value: '', notes: '' },
+    trouser_length: value?.trouser_length || { value: '', notes: '' },
+    inseam: value?.inseam || { value: '', notes: '' },
+    custom_fields: Array.isArray(value?.custom_fields) ? value.custom_fields : [],
+  }), [value]);
+
   const updateStd = useCallback(
-    (k: keyof MeasurementsUI, field: keyof EntryStr, text: string) => {
-      const cur = (value[k] as EntryStr) || { value: '', notes: '' };
-      onChange({ ...value, [k]: { ...cur, [field]: text } });
+    (k: keyof Omit<MeasurementsFormValues, 'custom_fields'>, field: keyof MeasurementFieldInput, text: string) => {
+      const cur = safeValue[k] || { value: '', notes: '' };
+      onChange({
+        ...safeValue,
+        [k]: { ...cur, [field]: text }
+      });
     },
-    [value, onChange]
+    [safeValue, onChange]
   );
 
   const addCustom = useCallback(() => {
-    const list = value.custom_fields || [];
+    const list = safeValue.custom_fields || [];
     const next = [
       ...list,
-      { _key: String(uuid.v4()), name: '', value: '', notes: '' } as CustomFieldStr,
+      { _key: String(uuid.v4()), name: '', value: '', notes: '' } as CustomFieldInput,
     ];
-    onChange({ ...value, custom_fields: next });
-  }, [value, onChange]);
+    onChange({ ...safeValue, custom_fields: next });
+  }, [safeValue, onChange]);
 
   const updateCustom = useCallback(
-    (idx: number, field: keyof CustomFieldStr, text: string) => {
-      const list = [...(value.custom_fields || [])];
+    (idx: number, field: keyof CustomFieldInput, text: string) => {
+      const list = [...(safeValue.custom_fields || [])];
       const row = { ...(list[idx] || { _key: String(uuid.v4()), name: '', value: '', notes: '' }) };
       (row as any)[field] = text;
       list[idx] = row;
-      onChange({ ...value, custom_fields: list });
+      onChange({ ...safeValue, custom_fields: list });
     },
-    [value, onChange]
+    [safeValue, onChange]
   );
 
   const removeCustom = useCallback(
     (idx: number) => {
-      const list = [...(value.custom_fields || [])];
+      const list = [...(safeValue.custom_fields || [])];
       list.splice(idx, 1);
-      onChange({ ...value, custom_fields: list });
+      onChange({ ...safeValue, custom_fields: list });
     },
-    [value, onChange]
+    [safeValue, onChange]
   );
 
   return (
@@ -82,15 +86,15 @@ export default function MeasurementsForm({
 
       {/* Standard fields grid */}
       <View className="flex-row flex-wrap -mx-1">
-        {MEAS_KEYS?.map(({ key, label }) => {
-          const e = (value[key] as EntryStr) || { value: '', notes: '' };
+        {MEAS_KEYS.map(({ key, label }) => {
+          const e = safeValue[key] || { value: '', notes: '' };
           return (
             <View key={String(key)} className="w-full md:w-1/2 px-1 mb-2">
               <View className="border rounded-xl p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
                 <Text className="text-gray-500 text-[12px] mb-2">{label}</Text>
 
                 <TextInput
-                  value={e.value}
+                  value={e.value || ''}
                   onChangeText={(t) => updateStd(key, 'value', t)}
                   keyboardType="decimal-pad"
                   placeholder="Value"
@@ -100,7 +104,7 @@ export default function MeasurementsForm({
                 />
 
                 <TextInput
-                  value={e.notes}
+                  value={e.notes || ''}
                   onChangeText={(t) => updateStd(key, 'notes', t)}
                   placeholder="Notes"
                   placeholderTextColor="#9ca3af"
@@ -127,15 +131,15 @@ export default function MeasurementsForm({
           </Pressable>
         </View>
 
-        {(value.custom_fields || []).length === 0 ? (
+        {safeValue.custom_fields.length === 0 ? (
           <Text className="text-gray-500">No custom fields.</Text>
         ) : (
           <View className="gap-2">
-            {(value.custom_fields || [])?.map((cf, idx) => (
+            {safeValue.custom_fields.map((cf, idx) => (
               <View key={cf._key || String(idx)} className="border rounded-xl p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
                 <View className="flex-row gap-2">
                   <TextInput
-                    value={cf.name}
+                    value={cf.name || ''}
                     onChangeText={(t) => updateCustom(idx, 'name', t)}
                     placeholder="Name (e.g., Sleeve Width)"
                     placeholderTextColor="#9ca3af"
@@ -151,7 +155,7 @@ export default function MeasurementsForm({
                 </View>
 
                 <TextInput
-                  value={cf.value}
+                  value={cf.value || ''}
                   onChangeText={(t) => updateCustom(idx, 'value', t)}
                   keyboardType="decimal-pad"
                   placeholder="Value"
@@ -161,7 +165,7 @@ export default function MeasurementsForm({
                 />
 
                 <TextInput
-                  value={cf.notes}
+                  value={cf.notes || ''}
                   onChangeText={(t) => updateCustom(idx, 'notes', t)}
                   placeholder="Notes"
                   placeholderTextColor="#9ca3af"
