@@ -14,7 +14,7 @@ export type RootStackParamList = {
   Home: undefined;
   AddClient: { clientId?: string };
   ClientDetail: { client: Client };
-  EditClient: { clientId: string; client?: Client }; 
+  EditClient: { clientId: string; client?: Client };
   Settings: undefined;
 };
 
@@ -45,9 +45,15 @@ const AppNavigator = () => {
         name="AddClient"
         component={AddClientScreen}
         options={{
+          headerShown: true,
           title: 'Add Client',
           presentation: 'modal',
-          animation: 'slide_from_bottom',
+          animation: 'slide_from_right',
+          headerStyle: {
+            backgroundColor: isDark ? '#0b0b0b' : '#ffffff',
+          },
+          headerTitleStyle: { fontWeight: '600' },
+          headerTintColor: isDark ? '#ffffff' : '#111827',
         }}
       />
 
@@ -55,9 +61,15 @@ const AppNavigator = () => {
         name="EditClient"
         component={EditClientScreen}
         options={{
+          headerShown: true,
           title: 'Edit Client',
           presentation: 'modal',
           animation: 'slide_from_right',
+          headerStyle: {
+            backgroundColor: isDark ? '#0b0b0b' : '#ffffff',
+          },
+          headerTitleStyle: { fontWeight: '600' },
+          headerTintColor: isDark ? '#ffffff' : '#111827',
         }}
       />
 
@@ -66,7 +78,7 @@ const AppNavigator = () => {
         component={ClientDetailScreen}
         options={() => ({
           headerShown: true,
-          title: 'Naap Details',
+          title: 'Details',
           presentation: 'card',
           animation: 'slide_from_right',
           headerStyle: {
