@@ -9,14 +9,16 @@ import AddClientForm from '../components/AddClientForm';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getClientById, updateClient, addClient } from '../services/StorageService';
 import type { Client, AddClientFormValues, MeasurementFieldInput, CustomFieldInput } from '../types/Client';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type AddRoute = RouteProp<RootStackParamList, 'AddClient'>;
 type EditRoute = RouteProp<RootStackParamList, 'EditClient'>;
 type AnyRoute = AddRoute | EditRoute;
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function AddClientScreen(props: { mode?: 'add' | 'edit'; clientId?: string }) {
     const route = useRoute<AnyRoute>();
-    const navigation = useNavigation();
+    const navigation = useNavigation<Nav>();
 
     const clientId =
         props.clientId ??

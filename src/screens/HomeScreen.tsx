@@ -120,7 +120,6 @@ export default function HomeScreen() {
                     refreshing={refreshing}
                     onRefresh={onRefresh}
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: 96 }} // avoid FAB overlap
                 />
             ) : (
                 <EmptyState message="No clients yet. Add your first client!" />
