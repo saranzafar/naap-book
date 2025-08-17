@@ -64,20 +64,15 @@ export default function AddClientScreen(props: { mode?: 'add' | 'edit'; clientId
     const handleSubmit = useCallback(
         async (formValues: AddClientFormValues) => {
             try {
-                console.log('Submitting form values:', JSON.stringify(formValues, null, 2));
-
                 if (mode === 'edit') {
                     const idForUpdate = String(clientId ?? clientParam?.id);
                     if (!idForUpdate) {
                         throw new Error('No client ID found for update');
                     }
 
-                    console.log("Updating client with id:", idForUpdate);
-
                     await updateClient(idForUpdate, formValues);
                     Toast.show({ type: 'success', text1: 'Client updated successfully' });
                 } else {
-                    console.log("Adding new client");
                     await addClient(formValues);
                     Toast.show({ type: 'success', text1: 'Client added successfully' });
                 }
