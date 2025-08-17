@@ -40,6 +40,98 @@ function getDefaultData(): RootData {
   };
 }
 
+// --- Pagination + filtering helpers ---
+type FilterMode = 'all' | 'name' | 'phone' | 'id';
+
+const _norm = (s: any) => String(s ?? '').toLowerCase().trim();
+const _digits = (s: any) => String(s ?? '').replace(/\D+/g, '');
+const _idMatches = (idVal: any, q: string) => {
+  const idStr = _norm(idVal);
+  const qStr = _norm(q);
+  if (!qStr) return true;
+  if (idStr.includes(qStr)) return true;
+
+  // Allow matching on the numeric part: "7" should match "n-7"
+  const qNum = _digits(qStr);
+  const idNum = _digits(idStr);
+  return qNum && idNum ? idNum.includes(qNum) : false;
+};
+
+// Stable sort: newest first by updated_at, then created_at, then name asc
+function _sortClients(a: Client, b: Client): number {
+  const ua = a.updated_at ? Date.parse(a.updated_at as any) : 0;
+  const ub = b.updated_at ? Date.parse(b.updated_at as any) : 0;
+  if (ub !== ua) return ub - ua;
+
+  const ca = a.created_at ? Date.parse(a.created_at as any) : 0;
+  const cb = b.created_at ? Date.parse(b.created_at as any) : 0;
+  if (cb !== ca) return cb - ca;
+
+  const na = (a.name || '').toLowerCase();
+  const nb = (b.name || '').toLowerCase();
+  return na.localeCompare(nb);
+}
+
+/**
+ * Get a filtered, sorted, paginated slice of clients.
+ * Works on top of local MMKV data now; can be swapped to a server later
+ * without changing the HomeScreen call site.
+ */
+export async function getClientsPage(opts: {
+  offset?: number;
+  limit?: number;
+  query?: string;
+  mode?: FilterMode;
+} = {}): Promise<{
+  items: Client[];
+  total: number;
+  hasMore: boolean;
+  offset: number;
+  limit: number;
+}> {
+  const { offset = 0, limit = 20, query = '', mode = 'all' } = opts;
+
+  // Load all from local storage
+  const data = getRootData();
+  const list = Object.values(data.users || {});
+
+  // Filter
+  const q = _norm(query);
+  const filtered = !q
+    ? list
+    : list.filter((c) => {
+      const nameStr = _norm(c.name);
+      const phoneStr = _digits(c.phone || '');
+      const idVal = c.id;
+
+      if (mode === 'name') return nameStr.includes(q);
+      if (mode === 'phone') {
+        const qDigits = _digits(q);
+        return qDigits ? phoneStr.includes(qDigits) : false;
+      }
+      if (mode === 'id') return _idMatches(idVal, q);
+
+      // mode === 'all'
+      const qDigits = _digits(q);
+      return (
+        nameStr.includes(q) ||
+        (qDigits ? phoneStr.includes(qDigits) : false) ||
+        _idMatches(idVal, q)
+      );
+    });
+
+  // Sort (newest first)
+  filtered.sort(_sortClients);
+
+  // Page
+  const total = filtered.length;
+  const slice = filtered.slice(offset, Math.min(offset + limit, total));
+  const hasMore = offset + slice.length < total;
+
+  return { items: slice, total, hasMore, offset, limit };
+}
+
+
 function getRootData(): RootData {
   return safeParse(storage.getString(ROOT_KEY), getDefaultData());
 }
