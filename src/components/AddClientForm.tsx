@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform } from
 import Toast from 'react-native-toast-message';
 import MeasurementsForm from './MeasurementsForm';
 import { MeasurementsFormValues, AddClientFormValues } from '../types/Client';
+import { ScrollView } from 'react-native-gesture-handler';
 
 type Props = {
     initialValues?: Partial<AddClientFormValues>;
@@ -33,7 +34,7 @@ const DEFAULTS: AddClientFormValues = {
     measurements: DEFAULT_MEASUREMENTS,
 };
 
-export default function AddClientForm({ initialValues, onSubmit, submitLabel = 'Add Client', mode }: Props) {
+export default function AddClientForm({ initialValues, onSubmit, submitLabel = 'Add Client' }: Props) {
     const [values, setValues] = useState<AddClientFormValues>({ ...DEFAULTS });
 
     useEffect(() => {
@@ -101,51 +102,89 @@ export default function AddClientForm({ initialValues, onSubmit, submitLabel = '
     };
 
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
-            <View className="gap-3">
-                <Field
-                    label="Name"
-                    value={values.name}
-                    onChangeText={update('name')}
-                    required
-                />
-                <Field
-                    label="Phone"
-                    value={values.phone || ''}
-                    onChangeText={update('phone')}
-                    keyboardType="phone-pad"
-                />
-                <Field
-                    label="Email"
-                    value={values.email || ''}
-                    onChangeText={update('email')}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                />
-                <Field
-                    label="Address"
-                    value={values.address || ''}
-                    onChangeText={update('address')}
-                />
-                <Field
-                    label="Notes"
-                    value={values.notes || ''}
-                    onChangeText={update('notes')}
-                    multiline
-                />
-
-                <MeasurementsForm
-                    value={values.measurements}
-                    onChange={(m) => setValues((v) => ({ ...v, measurements: m }))}
-                />
-            </View>
-
-            <Pressable
-                onPress={handleSubmit}
-                className="mt-4 rounded-xl border px-4 py-3 bg-blue-500 border-blue-500"
+        <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            className="flex-1"
+        >
+            <ScrollView
+                keyboardShouldPersistTaps="handled"
+                className="flex-1"
             >
-                <Text className="text-center font-semibold text-white">{submitLabel}</Text>
-            </Pressable>
+                {/* Card wrapper */}
+                <View className="rounded-2xl border border-zinc-200/70 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <Text className="mb-3 font-bold text-zinc-800 dark:text-zinc-100">
+                        Client Details
+                    </Text>
+
+                    {/* Two-column grid */}
+                    <View className="-mx-2 flex-row flex-wrap">
+                        <View className="w-1/2 px-2">
+                            <Field
+                                label="Name"
+                                value={values.name}
+                                onChangeText={update("name")}
+                                required
+                            />
+                        </View>
+                        <View className="w-1/2 px-2">
+                            <Field
+                                label="Phone"
+                                value={values.phone || ""}
+                                onChangeText={update("phone")}
+                                keyboardType="phone-pad"
+                            />
+                        </View>
+
+                        <View className="w-1/2 px-2 mt-3">
+                            <Field
+                                label="Email"
+                                value={values.email || ""}
+                                onChangeText={update("email")}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                            />
+                        </View>
+                        <View className="w-1/2 px-2 mt-3">
+                            <Field
+                                label="Address"
+                                value={values.address || ""}
+                                onChangeText={update("address")}
+                            />
+                        </View>
+                    </View>
+                </View>
+
+                {/* Measurements in its own card */}
+                <View className="mt-2 rounded-2xl border border-zinc-200/70 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <MeasurementsForm
+                        value={values.measurements}
+                        onChange={(m: any) => setValues((v: any) => ({ ...v, measurements: m }))}
+                    />
+                </View>
+
+                {/* Notes LAST as a textarea */}
+                <View className="mt-2 rounded-2xl border border-zinc-200/70 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <Field
+                        label="Notes"
+                        value={values.notes || ""}
+                        onChangeText={update("notes")}
+                        multiline
+                    />
+                </View>
+
+                {/* Submit */}
+                <View className="mb-12">
+                    <Pressable
+                        onPress={handleSubmit}
+                        android_ripple={{ color: "#ffffff22", borderless: false }}
+                        className="mt-4 rounded-2xl border border-blue-600 bg-blue-600 py-3 shadow-lg active:opacity-90 dark:border-blue-500 dark:bg-blue-500"
+                    >
+                        <Text className="text-center text-base font-semibold text-white">
+                            {submitLabel}
+                        </Text>
+                    </Pressable>
+                </View>
+            </ScrollView>
         </KeyboardAvoidingView>
     );
 }

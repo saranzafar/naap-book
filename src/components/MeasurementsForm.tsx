@@ -81,36 +81,39 @@ export default function MeasurementsForm({
   );
 
   return (
-    <View className="mt-3">
+    <View className="">
       <Text className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Measurements</Text>
 
       {/* Standard fields grid */}
       <View className="flex-row flex-wrap -mx-1">
-        {MEAS_KEYS.map(({ key, label }) => {
-          const e = safeValue[key] || { value: '', notes: '' };
+        {MEAS_KEYS?.map(({ key, label }) => {
+          const e = safeValue[key] || { value: "", notes: "" };
           return (
-            <View key={String(key)} className="w-full md:w-1/2 px-1 mb-2">
-              <View className="border rounded-xl p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
-                <Text className="text-gray-500 text-[12px] mb-2">{label}</Text>
+            <View key={String(key)} className="w-1/2 px-1 mb-2">
+              <View className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+                <Text className="mb-2 text-[12px] text-gray-500">{label}</Text>
 
+                {/* Value */}
                 <TextInput
-                  value={e.value || ''}
-                  onChangeText={(t) => updateStd(key, 'value', t)}
+                  value={e.value || ""}
+                  onChangeText={(t) => updateStd(key, "value", t)}
                   keyboardType="decimal-pad"
                   placeholder="Value"
                   placeholderTextColor="#9ca3af"
                   blurOnSubmit={false}
-                  className="border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                  className="rounded-lg border border-zinc-200 px-3 py-2 text-gray-900 dark:border-zinc-800 dark:text-white"
                 />
 
+                {/* Notes (smaller) */}
                 <TextInput
-                  value={e.notes || ''}
-                  onChangeText={(t) => updateStd(key, 'notes', t)}
+                  value={e.notes || ""}
+                  onChangeText={(t) => updateStd(key, "notes", t)}
                   placeholder="Notes"
                   placeholderTextColor="#9ca3af"
                   blurOnSubmit={false}
-                  multiline
-                  className="mt-2 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                  numberOfLines={1}        // keep compact
+                  multiline={false}        // single-line look
+                  className="mt-2 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-gray-900 dark:border-zinc-800 dark:text-white"
                 />
               </View>
             </View>
