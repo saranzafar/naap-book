@@ -5,9 +5,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Plus, Search, Phone, Hash, User } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 import Clipboard from '@react-native-clipboard/clipboard';
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import Share from 'react-native-share';
+import { FileDown } from 'lucide-react-native';
 
 import { deleteClient } from '../services/StorageService';
-import { getClientsPage } from '../services/StorageService'; // NEW
+import { getClientsPage } from '../services/StorageService';
 import ClientCard from '../components/ClientCard';
 import EmptyState from '../components/EmptyState';
 import { SwipeableClientItem } from '../components/SwipeableClientItem';
@@ -156,6 +159,55 @@ export default function HomeScreen() {
         Toast.show({ type: 'success', text1: 'Copied!', text2: 'Client record copied to clipboard.' });
     }, []);
 
+    const handleExportAllToPDF = useCallback(async () => {
+        try {
+            if (!items.length) {
+                Toast.show({ type: 'info', text1: 'No records', text2: 'No clients to export.' });
+                return;
+            }
+
+            // Build HTML dynamically
+            const allRecordsHtml = items
+                .map((client) => `<pre>${formatClientForShare(client)}</pre>`)
+                .join('<hr/>');
+
+            const htmlContent = `
+                <html>
+                    <head>
+                    <meta charset="utf-8"/>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        pre { white-space: pre-wrap; font-size: 14px; margin-bottom: 20px; }
+                        hr { border: none; border-top: 1px solid #ccc; margin: 30px 0; }
+                    </style>
+                    </head>
+                    <body>
+                    <h1>NaapBook – Client Records</h1>
+                    ${allRecordsHtml}
+                    </body>
+                </html>
+                `;
+
+            const file = await RNHTMLtoPDF.convert({
+                html: htmlContent,
+                fileName: `naapbook_records_${Date.now()}`,
+                base64: false,
+            });
+
+            Toast.show({ type: 'success', text1: 'PDF Exported', text2: 'File saved successfully!' });
+
+            // Open share dialog
+            await Share.open({
+                url: `file://${file.filePath}`,
+                type: 'application/pdf',
+                failOnCancel: false,
+            });
+        } catch (error) {
+            console.error('PDF export failed', error);
+            Toast.show({ type: 'error', text1: 'Export failed', text2: 'Unable to create PDF.' });
+        }
+    }, [items]);
+
 
     const renderItem = useCallback(
         ({ item }: { item: Client }) => (
@@ -176,7 +228,17 @@ export default function HomeScreen() {
         <View className="mb-3">
             <View className="flex-row items-center justify-between">
                 <Text className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">Naap Book</Text>
+
+                {/* Export PDF button */}
+                <TouchableOpacity
+                    onPress={handleExportAllToPDF}
+                    className="ml-3 p-2 rounded-full bg-blue-600"
+                    activeOpacity={0.8}
+                >
+                    <FileDown size={20} color="white" />
+                </TouchableOpacity>
             </View>
+
 
             {/* Search */}
             <View className="mt-3 flex-row items-center rounded-2xl border border-zinc-200 bg-white px-3 py-2 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
