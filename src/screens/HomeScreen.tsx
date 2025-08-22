@@ -4,6 +4,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Plus, Search, Phone, Hash, User } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 import { deleteClient } from '../services/StorageService';
 import { getClientsPage } from '../services/StorageService'; // NEW
@@ -12,6 +13,7 @@ import EmptyState from '../components/EmptyState';
 import { SwipeableClientItem } from '../components/SwipeableClientItem';
 import { Client } from '../types/Client';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { formatClientForShare } from '../utils/format';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type FilterMode = 'all' | 'name' | 'phone' | 'id';
@@ -148,13 +150,25 @@ export default function HomeScreen() {
         [loadPage]
     );
 
+    const handleShareClient = useCallback((client: Client) => {
+        const formatted = formatClientForShare(client);
+        Clipboard.setString(formatted);
+        Toast.show({ type: 'success', text1: 'Copied!', text2: 'Client record copied to clipboard.' });
+    }, []);
+
+
     const renderItem = useCallback(
         ({ item }: { item: Client }) => (
-            <SwipeableClientItem client={item} onEdit={handleEditClient} onDelete={handleDeleteClient}>
+            <SwipeableClientItem
+                client={item}
+                onEdit={handleEditClient}
+                onDelete={handleDeleteClient}
+                onShare={handleShareClient}
+            >
                 <ClientCard client={item} onPress={() => openDetails(item)} />
             </SwipeableClientItem>
         ),
-        [handleEditClient, handleDeleteClient, openDetails]
+        [handleEditClient, handleDeleteClient, handleShareClient, openDetails]
     );
 
     // ---- Header (same minimal header from last step) ----
