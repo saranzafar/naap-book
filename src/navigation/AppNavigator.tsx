@@ -88,7 +88,7 @@ const AppNavigator = () => {
 
   return (
     <Stack.Navigator
-      initialRouteName="Home"
+      initialRouteName={isAuthed ? 'Home' : 'Login'}
       screenOptions={{
         headerShown: false, // keep hidden by default
         contentStyle: {
