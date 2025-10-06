@@ -8,6 +8,8 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
 import { FileDown } from 'lucide-react-native';
+import { LogOut } from 'lucide-react-native';
+import { supabase } from '../services/supabaseClient';
 
 import { deleteClient } from '../services/StorageService';
 import { getClientsPage } from '../services/StorageService';
@@ -227,18 +229,35 @@ export default function HomeScreen() {
     const Header = (
         <View className="mb-3">
             <View className="flex-row items-center justify-between">
-                <Text className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">Naap Book</Text>
+                <Text className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">
+                    Naap Book
+                </Text>
 
-                {/* Export PDF button */}
-                <TouchableOpacity
-                    onPress={handleExportAllToPDF}
-                    className="ml-3 p-2 rounded-full bg-blue-600"
-                    activeOpacity={0.8}
-                >
-                    <FileDown size={20} color="white" />
-                </TouchableOpacity>
+                <View className="flex-row items-center gap-2">
+                    {/* Export PDF button */}
+                    <TouchableOpacity
+                        onPress={handleExportAllToPDF}
+                        className="p-2 rounded-full bg-blue-600 active:opacity-80"
+                    >
+                        <FileDown size={20} color="white" />
+                    </TouchableOpacity>
+                    {/* Logout button */}
+                    <TouchableOpacity
+                        onPress={async () => {
+                            try {
+                                await supabase.auth.signOut();
+                                Toast.show({ type: 'success', text1: 'Logged out successfully' });
+                            } catch (error) {
+                                console.error('Logout failed:', error);
+                                Toast.show({ type: 'error', text1: 'Logout failed' });
+                            }
+                        }}
+                        className="mr-3 p-2 rounded-full bg-red-500 active:opacity-80"
+                    >
+                        <LogOut size={20} color="white" />
+                    </TouchableOpacity>
+                </View>
             </View>
-
 
             {/* Search */}
             <View className="mt-3 flex-row items-center rounded-2xl border border-zinc-200 bg-white px-3 py-2 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
