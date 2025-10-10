@@ -1,4 +1,3 @@
-// navigation/AppNavigator.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -19,15 +18,18 @@ import ForgetPasswordScreen from '../screens/auth/ForgetPasswordScreen';
 import OTPVerificationScreen from '../screens/auth/OTPVerificationScreen';
 import ChangePasswordScreen from '../screens/auth/ChangePasswordScreen';
 
+import ProfileScreen from '../screens/user/ProfileScreen';
+
 // Temporary splash while we check session
 const Splash = () => null;
 
 export type RootStackParamList = {
-  Home: undefined;
+  Home: { email?: string } | undefined;
   AddClient: { clientId?: string };
   ClientDetail: { client: Client };
   EditClient: { clientId: string; client?: Client };
   Settings: undefined;
+  Profile: undefined;
 
   // Auth routes
   Login: undefined;
@@ -107,6 +109,22 @@ const AppNavigator = () => {
           />
 
           <Stack.Screen
+            name="Profile"
+            component={ProfileScreen}
+            options={{
+              headerShown: true,
+              title: 'Profile',
+              presentation: 'modal',
+              animation: 'slide_from_right',
+              headerStyle: {
+                backgroundColor: isDark ? '#0b0b0b' : '#ffffff',
+              },
+              headerTitleStyle: { fontWeight: '600' },
+              headerTintColor: isDark ? '#ffffff' : '#111827',
+            }}
+          />
+
+          <Stack.Screen
             name="AddClient"
             component={AddClientScreen}
             options={{
@@ -172,9 +190,22 @@ const AppNavigator = () => {
             component={LoginScreen}
             options={{ animationTypeForReplace: 'push', gestureEnabled: false }}
           />
-          <Stack.Screen name="Signup" component={SignupScreen} />
-          <Stack.Screen name="ForgetPassword" component={ForgetPasswordScreen} />
-          <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
+
+          <Stack.Screen
+            name="Signup"
+            component={SignupScreen}
+          />
+
+          <Stack.Screen
+            name="ForgetPassword"
+            component={ForgetPasswordScreen}
+          />
+
+          <Stack.Screen
+            name="OTPVerification"
+            component={OTPVerificationScreen}
+          />
+
           <Stack.Screen
             name="ChangePassword"
             component={ChangePasswordScreen}

@@ -5,15 +5,11 @@ import SessionStorage from './SessionStorage';
 const TOKEN_KEY = 'SUPABASE_SESSION';
 
 export async function signUp(name: string, email: string, password: string) {
-    console.log("Signing up with:", { name, email, password });
-
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { data: { name } },
     });
-    console.log("Data from signUp:", data, "Error from signUp:", error);
-
     if (error) throw error;
     return data;
 }

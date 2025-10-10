@@ -25,7 +25,7 @@ type FilterMode = 'all' | 'name' | 'phone' | 'id';
 
 const PAGE_SIZE = 20; // Adjust as needed
 
-export default function HomeScreen() {
+export default function HomeScreen({ route }: any) {
     const navigation = useNavigation<Nav>();
 
     const [items, setItems] = useState<Client[]>([]);
@@ -237,7 +237,7 @@ export default function HomeScreen() {
                     {/* Export PDF button */}
                     <TouchableOpacity
                         onPress={handleExportAllToPDF}
-                        className="p-2 rounded-full bg-blue-600 active:opacity-80"
+                        className="p-2 rounded-full bg-orange-600 active:opacity-80"
                     >
                         <FileDown size={20} color="white" />
                     </TouchableOpacity>
@@ -252,12 +252,33 @@ export default function HomeScreen() {
                                 Toast.show({ type: 'error', text1: 'Logout failed' });
                             }
                         }}
-                        className="mr-3 p-2 rounded-full bg-red-500 active:opacity-80"
+                        className="p-2 rounded-full bg-red-500 active:opacity-80"
                     >
                         <LogOut size={20} color="white" />
                     </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('Profile')}
+                        className="p-2 rounded-full bg-blue-600 active:opacity-80"
+                    >
+                        <User size={20} color="white" />
+                    </TouchableOpacity>
                 </View>
             </View>
+
+            {route.params?.context === 'passwordRecovery' && (
+                <View className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3 mt-3">
+                    <Text className="text-amber-700 dark:text-amber-300 text-sm">
+                        You’ve recently recovered your account.{' '}
+                        <Text
+                            className="text-indigo-600 dark:text-indigo-400 font-semibold"
+                            onPress={() => navigation.navigate('ChangePassword')}
+                        >
+                            Change your password
+                        </Text>{' '}
+                        for better security.
+                    </Text>
+                </View>
+            )}
 
             {/* Search */}
             <View className="mt-3 flex-row items-center rounded-2xl border border-zinc-200 bg-white px-3 py-2 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
