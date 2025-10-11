@@ -31,8 +31,6 @@ export default function ClientDetailScreen() {
     const navigation = useNavigation<Nav>();
     const { params } = useRoute<Route>();
     const client = params.client as Client;
-    console.log('ClientDetailScreen render', client);
-
 
     const initials = useMemo(() => {
         const parts = (client?.name || '').trim().split(/\s+/);

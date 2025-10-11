@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { ScrollView, View, ActivityIndicator } from 'react-native';
-import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 
 import AddClientForm from '../components/AddClientForm';
@@ -82,12 +82,7 @@ export default function AddClientScreen(props: { mode?: 'add' | 'edit'; clientId
                     Toast.show({ type: 'success', text1: 'Client added successfully' });
                 }
 
-                navigation.dispatch(
-                    CommonActions.reset({
-                        index: 0,
-                        routes: [{ name: 'Home' }],
-                    })
-                );
+                navigation.navigate('Home');
             } catch (e: any) {
                 console.error('Submit error:', e);
                 Toast.show({

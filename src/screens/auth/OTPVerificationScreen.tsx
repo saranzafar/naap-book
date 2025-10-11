@@ -49,7 +49,6 @@ export default function OTPVerificationScreen({ route, navigation }: any) {
                     text1: 'OTP Verified',
                     text2: 'Please set your new password.',
                 });
-                console.log("Navigating to ChangePassword screen");
                 navigation.replace('Home', { email, context: 'passwordRecovery' });
             }
         } catch (err: any) {
