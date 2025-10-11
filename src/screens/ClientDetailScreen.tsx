@@ -8,11 +8,21 @@ import {
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Phone, Mail, MessageSquare, MapPin, Calendar, Pencil, Trash2, User } from 'lucide-react-native';
+import {
+    Phone,
+    Mail,
+    MessageSquare,
+    MapPin,
+    Calendar,
+    Pencil,
+    Trash2,
+    User,
+} from 'lucide-react-native';
 
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { deleteClient } from '../services/StorageService';
 import { openDial, openEmail, openSms } from '../utils/contactActions';
+import type { Client } from '../types/Client';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'ClientDetail'>;
 type Route = RouteProp<RootStackParamList, 'ClientDetail'>;
@@ -20,7 +30,9 @@ type Route = RouteProp<RootStackParamList, 'ClientDetail'>;
 export default function ClientDetailScreen() {
     const navigation = useNavigation<Nav>();
     const { params } = useRoute<Route>();
-    const client = params.client;
+    const client = params.client as Client;
+    console.log('ClientDetailScreen render', client);
+
 
     const initials = useMemo(() => {
         const parts = (client?.name || '').trim().split(/\s+/);
@@ -29,22 +41,23 @@ export default function ClientDetailScreen() {
     }, [client?.name]);
 
     const measurements = client?.measurements || {};
+
     const rows: Array<{ key: keyof typeof measurements; label: string }> = [
-        { key: 'chest', label: 'Chest / Bust' },
-        { key: 'shoulder', label: 'Shoulder' },
-        { key: 'arm_length', label: 'Arm Length' },
-        { key: 'collar', label: 'Collar / Neck' },
-        { key: 'shirt_length', label: 'Shirt Length' },
-        { key: 'waist', label: 'Waist' },
-        { key: 'hips', label: 'Hips' },
-        { key: 'trouser_length', label: 'Trouser Length' },
-        { key: 'inseam', label: 'Inseam' },
+        { key: 'Qameez', label: 'Qameez / قمیض (Shirt Length)' },
+        { key: 'Bazu', label: 'Bazu / بازو (Sleeve)' },
+        { key: 'Teera', label: 'Teera / تیرا (Armhole)' },
+        { key: 'Gala', label: 'Gala / گلا (Neck)' },
+        { key: 'Chati', label: 'Chati / چھاتی (Chest)' },
+        { key: 'Qamar', label: 'Qamar / کمر (Waist)' },
+        { key: 'Ghera', label: 'Ghera / گھیرہ (Hem)' },
+        { key: 'Shalwar', label: 'Shalwar / شلوار (Trousers)' },
+        { key: 'Pancha', label: 'Pancha / پانچہ (Cuff)' },
     ];
 
-    const customFields: Array<any> = Object.values(measurements.custom_fields || {});
+    const customFields = Object.values(measurements.custom_fields || {});
 
     const onEdit = useCallback(() => {
-        navigation.navigate('EditClient', { clientId: String(client.id), client })
+        navigation.navigate('EditClient', { clientId: String(client.id), client });
     }, [navigation, client]);
 
     const onDelete = useCallback(() => {
@@ -67,14 +80,11 @@ export default function ClientDetailScreen() {
 
     return (
         <View className="flex-1">
-            <ScrollView
-                className="flex-1"
-                keyboardShouldPersistTaps="handled"
-            >
+            <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
                 {/* Top card */}
                 <View className="px-4 pt-4">
                     <View className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 pb-6 relative overflow-hidden">
-                        {/* soft gradient-ish backdrop via big circle */}
+                        {/* soft gradient circle backdrop */}
                         <View className="absolute -top-20 -right-10 w-56 h-56 rounded-full bg-blue-100/60 dark:bg-blue-900/20" />
                         <View className="flex-row items-center">
                             <View className="w-14 h-14 rounded-full bg-blue-600/90 items-center justify-center mr-3">
@@ -89,7 +99,10 @@ export default function ClientDetailScreen() {
                                     {client.name || 'Unnamed Client'}
                                 </Text>
                                 {!!client.notes && (
-                                    <Text className="text-[12px] text-gray-500 mt-0.5" numberOfLines={2}>
+                                    <Text
+                                        className="text-[12px] text-gray-500 mt-0.5"
+                                        numberOfLines={2}
+                                    >
                                         {client.notes}
                                     </Text>
                                 )}
@@ -118,7 +131,7 @@ export default function ClientDetailScreen() {
                             />
                         </View>
 
-                        {/* Meta */}
+                        {/* Meta info */}
                         <View className="mt-4 gap-1">
                             {client.phone ? (
                                 <MetaRow icon={<Phone size={16} color="#6b7280" />} text={client.phone} />
@@ -130,29 +143,34 @@ export default function ClientDetailScreen() {
                                 <MetaRow icon={<MapPin size={16} color="#6b7280" />} text={client.address} />
                             ) : null}
                             {client.created_at ? (
-                                <MetaRow icon={<Calendar size={16} color="#6b7280" />} text={`Added: ${new Date(client.created_at).toDateString()}`} />
+                                <MetaRow
+                                    icon={<Calendar size={16} color="#6b7280" />}
+                                    text={`Added: ${new Date(client.created_at).toDateString()}`}
+                                />
                             ) : null}
                         </View>
                     </View>
                 </View>
 
                 {/* Measurements */}
-                <Section title="Measurements">
+                <Section title="Measurements / ناپ">
                     <View className="flex-row flex-wrap -mx-1">
-                        {rows?.map(({ key, label }) => {
+                        {rows.map(({ key, label }) => {
                             const v = (measurements as any)?.[key];
-                            const value = v?.value ?? null;
-                            const unit = v?.unit ?? '';
+                            const value = v?.value ?? '';
                             const note = v?.notes ?? '';
                             return (
                                 <View key={String(key)} className="w-1/2 px-1 mb-2">
                                     <Card>
                                         <Text className="text-[12px] text-gray-500">{label}</Text>
                                         <Text className="text-base font-semibold mt-0.5 dark:text-gray-300">
-                                            {value ?? '—'} {value ? unit : ''}
+                                            {value || '—'}
                                         </Text>
                                         {!!note && (
-                                            <Text numberOfLines={2} className="text-[11px] text-gray-500 mt-1">
+                                            <Text
+                                                numberOfLines={2}
+                                                className="text-[11px] text-gray-500 mt-1"
+                                            >
                                                 {note}
                                             </Text>
                                         )}
@@ -163,19 +181,24 @@ export default function ClientDetailScreen() {
                     </View>
                 </Section>
 
-                {/* Custom fields */}
+                {/* Custom Fields */}
                 {customFields.length > 0 && (
-                    <Section title="Custom Fields">
+                    <Section title="Custom Fields / اضافی ناپ">
                         <View className="flex-row flex-wrap -mx-1">
-                            {customFields?.map((cf: any, i: number) => (
+                            {customFields.map((cf: any, i: number) => (
                                 <View key={i} className="w-1/2 px-1 mb-2">
                                     <Card>
-                                        <Text className="text-[12px] text-gray-500">{cf?.name || 'Custom'}</Text>
+                                        <Text className="text-[12px] text-gray-500">
+                                            {cf?.name || 'Custom'}
+                                        </Text>
                                         <Text className="text-base font-semibold mt-0.5">
                                             {cf?.value ?? '—'}
                                         </Text>
                                         {!!cf?.notes && (
-                                            <Text numberOfLines={2} className="text-[11px] text-gray-500 mt-1">
+                                            <Text
+                                                numberOfLines={2}
+                                                className="text-[11px] text-gray-500 mt-1"
+                                            >
                                                 {cf?.notes}
                                             </Text>
                                         )}
@@ -188,7 +211,7 @@ export default function ClientDetailScreen() {
 
                 {/* Notes */}
                 {!!client?.notes && (
-                    <Section title="Notes">
+                    <Section title="Notes / نوٹس">
                         <Card>
                             <Text className="text-[14px] text-gray-700 dark:text-gray-300 leading-5">
                                 {client.notes}
@@ -198,7 +221,7 @@ export default function ClientDetailScreen() {
                 )}
             </ScrollView>
 
-            {/* Sticky bottom actions */}
+            {/* Bottom actions */}
             <View className="absolute left-0 right-0 bottom-0 px-4 pb-5 pt-3 bg-white/90 dark:bg-zinc-950/90 border-t border-zinc-200 dark:border-zinc-800">
                 <View className="flex-row gap-3">
                     <Pressable
@@ -231,7 +254,7 @@ export default function ClientDetailScreen() {
     );
 }
 
-/* ——— UI bits ——— */
+/* ——— UI Helpers ——— */
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
@@ -283,7 +306,12 @@ function ActionChip({
             accessibilityLabel={label}
         >
             <View>{icon}</View>
-            <Text className={`text-[12px] font-semibold ${disabled ? 'text-zinc-600 dark:text-zinc-300' : 'text-white'}`}>
+            <Text
+                className={`text-[12px] font-semibold ${disabled
+                    ? 'text-zinc-600 dark:text-zinc-300'
+                    : 'text-white'
+                    }`}
+            >
                 {label}
             </Text>
         </Pressable>

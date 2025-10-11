@@ -1,15 +1,13 @@
-// types/Client.ts
-
-/** ---------- Domain (persisted) types ---------- */
-
 export interface MeasurementEntry {
     /** Optional so empty fields don't force 0 and so patches can omit */
-    value?: number;
+    value?: string;
     notes?: string;
 }
 
 export interface CustomField extends MeasurementEntry {
     name: string;
+    value?: string;
+    notes?: string;
 }
 
 /**
@@ -18,16 +16,15 @@ export interface CustomField extends MeasurementEntry {
  * - partial updates (edit) can deep-merge safely
  */
 export interface Measurements {
-    chest?: MeasurementEntry;
-    shoulder?: MeasurementEntry;
-    arm_length?: MeasurementEntry;
-    collar?: MeasurementEntry;
-    shirt_length?: MeasurementEntry;
-    waist?: MeasurementEntry;
-    hips?: MeasurementEntry;
-    trouser_length?: MeasurementEntry;
-    inseam?: MeasurementEntry;
-
+    Qameez?: MeasurementEntry;
+    Bazu?: MeasurementEntry;
+    Teera?: MeasurementEntry;
+    Gala?: MeasurementEntry;
+    Chati?: MeasurementEntry;
+    Qamar?: MeasurementEntry;
+    Ghera?: MeasurementEntry;
+    Shalwar?: MeasurementEntry;
+    Pancha?: MeasurementEntry;
     /** Stored as a map in storage for stable keys */
     custom_fields?: Record<string, CustomField>;
 }
@@ -42,50 +39,6 @@ export interface Client {
     created_at: string;
     updated_at: string;
     measurements: Measurements;
-}
-
-/** ---------- UI / Form types (strings for stable typing) ---------- */
-
-export interface MeasurementFieldInput {
-    /** keep as string in UI to avoid keyboard closing on Android */
-    value: string;     // e.g., "15.5" or ""
-    notes?: string;
-}
-
-export interface CustomFieldInput extends MeasurementFieldInput {
-    /** UI helper key to keep rows stable while editing */
-    _key?: string;
-    name: string;
-}
-
-/**
- * Form-friendly shape:
- * - standard measurements are edited as strings
- * - custom fields are an array for easy add/remove
- */
-export interface MeasurementsFormValues {
-    chest: MeasurementFieldInput;
-    shoulder: MeasurementFieldInput;
-    arm_length: MeasurementFieldInput;
-    collar: MeasurementFieldInput;
-    shirt_length: MeasurementFieldInput;
-    waist: MeasurementFieldInput;
-    hips: MeasurementFieldInput;
-    trouser_length: MeasurementFieldInput;
-    inseam: MeasurementFieldInput;
-
-    custom_fields: CustomFieldInput[]; // UI array; map to Record<> on save
-}
-
-/** Your top-level Add/Edit form values now include measurements */
-export interface AddClientFormValues {
-    name: string;
-    phone?: string;
-    email?: string;
-    address?: string;
-    notes?: string;
-
-    measurements: MeasurementsFormValues;
 }
 
 /** Optional: a handy type for updateClient patch payloads */

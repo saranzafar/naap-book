@@ -1,14 +1,12 @@
-// screens/AddClientScreen.tsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { ScrollView, View, ActivityIndicator } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
-import { CommonActions } from '@react-navigation/native';
 
 import AddClientForm from '../components/AddClientForm';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getClientById, updateClient, addClient } from '../services/StorageService';
-import type { Client, AddClientFormValues, MeasurementFieldInput, CustomFieldInput } from '../types/Client';
+import type { Client, ClientPatch, Measurements } from '../types/Client';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type AddRoute = RouteProp<RootStackParamList, 'AddClient'>;
@@ -29,14 +27,14 @@ export default function AddClientScreen(props: { mode?: 'add' | 'edit'; clientId
 
     const mode: 'add' | 'edit' = props.mode ?? (clientId ? 'edit' : 'add');
 
-    const [initialValues, setInitialValues] = useState<AddClientFormValues | null>(null);
+    const [initialValues, setInitialValues] = useState<Partial<Client> | null>(null);
     const [loading, setLoading] = useState(mode === 'edit' && !clientParam);
 
     useEffect(() => {
         if (mode !== 'edit') return;
 
         if (clientParam) {
-            setInitialValues(toFormValues(clientParam));
+            setInitialValues(clientParam);
             setLoading(false);
             return;
         }
@@ -50,7 +48,7 @@ export default function AddClientScreen(props: { mode?: 'add' | 'edit'; clientId
                     navigation.goBack();
                     return;
                 }
-                setInitialValues(toFormValues(client));
+                setInitialValues(client);
             } catch (error) {
                 console.error('Failed to load client:', error);
                 Toast.show({ type: 'error', text1: 'Failed to load client' });
@@ -62,22 +60,28 @@ export default function AddClientScreen(props: { mode?: 'add' | 'edit'; clientId
     }, [mode, clientId, clientParam, navigation]);
 
     const handleSubmit = useCallback(
-        async (formValues: AddClientFormValues) => {
+        async (formValues: Client) => {
             try {
                 if (mode === 'edit') {
                     const idForUpdate = String(clientId ?? clientParam?.id);
-                    if (!idForUpdate) {
-                        throw new Error('No client ID found for update');
-                    }
+                    if (!idForUpdate) throw new Error('No client ID found for update');
 
-                    await updateClient(idForUpdate, formValues);
+                    const patch: ClientPatch = {
+                        name: formValues.name,
+                        phone: formValues.phone,
+                        email: formValues.email,
+                        address: formValues.address,
+                        notes: formValues.notes,
+                        measurements: formValues.measurements,
+                    };
+
+                    await updateClient(idForUpdate, patch);
                     Toast.show({ type: 'success', text1: 'Client updated successfully' });
                 } else {
                     await addClient(formValues);
                     Toast.show({ type: 'success', text1: 'Client added successfully' });
                 }
 
-                // Navigate back to home
                 navigation.dispatch(
                     CommonActions.reset({
                         index: 0,
@@ -89,7 +93,7 @@ export default function AddClientScreen(props: { mode?: 'add' | 'edit'; clientId
                 Toast.show({
                     type: 'error',
                     text1: 'Save failed',
-                    text2: e?.message ?? 'Unknown error occurred'
+                    text2: e?.message ?? 'Unknown error occurred',
                 });
             }
         },
@@ -116,44 +120,19 @@ export default function AddClientScreen(props: { mode?: 'add' | 'edit'; clientId
     );
 }
 
-/* ---------------- mapping helpers ---------------- */
+/* ---------------- mapping helpers (optional, simplified) ---------------- */
 
-function measurementToInput(m?: { value?: number; notes?: string }): MeasurementFieldInput {
+export function normalizeMeasurements(m?: Measurements): Measurements {
     return {
-        value: m?.value != null ? String(m.value) : '',
-        notes: m?.notes ?? '',
-    };
-}
-
-function toFormValues(client: Client): AddClientFormValues {
-    const m = client.measurements || {};
-    const cfObj = m.custom_fields || {};
-
-    // Convert custom fields object to array for editing
-    const custom_fields: CustomFieldInput[] = Object.entries(cfObj).map(([key, cf]) => ({
-        _key: key,
-        name: cf.name || '',
-        value: cf.value != null ? String(cf.value) : '',
-        notes: cf.notes ?? '',
-    }));
-
-    return {
-        name: client.name ?? '',
-        phone: client.phone ?? '',
-        email: client.email ?? '',
-        address: client.address ?? '',
-        notes: client.notes ?? '',
-        measurements: {
-            chest: measurementToInput(m.chest),
-            shoulder: measurementToInput(m.shoulder),
-            arm_length: measurementToInput(m.arm_length),
-            collar: measurementToInput(m.collar),
-            shirt_length: measurementToInput(m.shirt_length),
-            waist: measurementToInput(m.waist),
-            hips: measurementToInput(m.hips),
-            trouser_length: measurementToInput(m.trouser_length),
-            inseam: measurementToInput(m.inseam),
-            custom_fields,
-        },
+        Qameez: m?.Qameez || { value: '', notes: '' },
+        Bazu: m?.Bazu || { value: '', notes: '' },
+        Teera: m?.Teera || { value: '', notes: '' },
+        Gala: m?.Gala || { value: '', notes: '' },
+        Chati: m?.Chati || { value: '', notes: '' },
+        Qamar: m?.Qamar || { value: '', notes: '' },
+        Ghera: m?.Ghera || { value: '', notes: '' },
+        Shalwar: m?.Shalwar || { value: '', notes: '' },
+        Pancha: m?.Pancha || { value: '', notes: '' },
+        custom_fields: m?.custom_fields || {},
     };
 }

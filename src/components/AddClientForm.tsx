@@ -2,92 +2,89 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import Toast from 'react-native-toast-message';
 import MeasurementsForm from './MeasurementsForm';
-import { MeasurementsFormValues, AddClientFormValues } from '../types/Client';
+import { Client, Measurements } from '../types/Client';
 import { ScrollView } from 'react-native-gesture-handler';
 
 type Props = {
-    initialValues?: Partial<AddClientFormValues>;
-    onSubmit: (values: AddClientFormValues) => Promise<void> | void;
+    initialValues?: Partial<Client>;
+    onSubmit: (values: Client) => Promise<void> | void;
     submitLabel?: string;
     mode?: 'add' | 'edit';
 };
 
-const DEFAULT_MEASUREMENTS: MeasurementsFormValues = {
-    chest: { value: '', notes: '' },
-    shoulder: { value: '', notes: '' },
-    arm_length: { value: '', notes: '' },
-    collar: { value: '', notes: '' },
-    shirt_length: { value: '', notes: '' },
-    waist: { value: '', notes: '' },
-    hips: { value: '', notes: '' },
-    trouser_length: { value: '', notes: '' },
-    inseam: { value: '', notes: '' },
-    custom_fields: [],
+const DEFAULT_MEASUREMENTS: Measurements = {
+    Qameez: { value: '', notes: '' },
+    Bazu: { value: '', notes: '' },
+    Teera: { value: '', notes: '' },
+    Gala: { value: '', notes: '' },
+    Chati: { value: '', notes: '' },
+    Qamar: { value: '', notes: '' },
+    Ghera: { value: '', notes: '' },
+    Shalwar: { value: '', notes: '' },
+    Pancha: { value: '', notes: '' },
+    custom_fields: {},
 };
 
-const DEFAULTS: AddClientFormValues = {
+const DEFAULTS: Client = {
+    id: '', // required by interface
     name: '',
     phone: '',
     email: '',
     address: '',
     notes: '',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     measurements: DEFAULT_MEASUREMENTS,
 };
 
 export default function AddClientForm({ initialValues, onSubmit, submitLabel = 'Add Client' }: Props) {
-    const [values, setValues] = useState<AddClientFormValues>({ ...DEFAULTS });
+    const [values, setValues] = useState<Client>({ ...DEFAULTS });
 
     useEffect(() => {
         if (initialValues) {
             // Safely merge initial values with defaults
-            const safeInitial: AddClientFormValues = {
-                name: initialValues.name || '',
-                phone: initialValues.phone || '',
-                email: initialValues.email || '',
-                address: initialValues.address || '',
-                notes: initialValues.notes || '',
+            const safeInitial: Client = {
+                ...DEFAULTS,
+                ...initialValues,
                 measurements: {
-                    chest: initialValues.measurements?.chest || { value: '', notes: '' },
-                    shoulder: initialValues.measurements?.shoulder || { value: '', notes: '' },
-                    arm_length: initialValues.measurements?.arm_length || { value: '', notes: '' },
-                    collar: initialValues.measurements?.collar || { value: '', notes: '' },
-                    shirt_length: initialValues.measurements?.shirt_length || { value: '', notes: '' },
-                    waist: initialValues.measurements?.waist || { value: '', notes: '' },
-                    hips: initialValues.measurements?.hips || { value: '', notes: '' },
-                    trouser_length: initialValues.measurements?.trouser_length || { value: '', notes: '' },
-                    inseam: initialValues.measurements?.inseam || { value: '', notes: '' },
-                    custom_fields: Array.isArray(initialValues.measurements?.custom_fields)
-                        ? initialValues.measurements.custom_fields
-                        : [],
+                    Qameez: initialValues.measurements?.Qameez || { value: '', notes: '' },
+                    Bazu: initialValues.measurements?.Bazu || { value: '', notes: '' },
+                    Teera: initialValues.measurements?.Teera || { value: '', notes: '' },
+                    Gala: initialValues.measurements?.Gala || { value: '', notes: '' },
+                    Chati: initialValues.measurements?.Chati || { value: '', notes: '' },
+                    Qamar: initialValues.measurements?.Qamar || { value: '', notes: '' },
+                    Ghera: initialValues.measurements?.Ghera || { value: '', notes: '' },
+                    Shalwar: initialValues.measurements?.Shalwar || { value: '', notes: '' },
+                    Pancha: initialValues.measurements?.Pancha || { value: '', notes: '' },
+                    custom_fields: initialValues.measurements?.custom_fields || {},
                 },
             };
             setValues(safeInitial);
         }
     }, [initialValues]);
 
-    const update = (key: keyof Omit<AddClientFormValues, 'measurements'>) => (text: string) =>
+    const update = (key: keyof Omit<Client, 'measurements'>) => (text: string) =>
         setValues((v) => ({ ...v, [key]: text }));
 
     const handleSubmit = async () => {
         try {
-            // Validate required fields
             if (!values.name?.trim()) {
                 Toast.show({
                     type: 'error',
                     text1: 'Validation Error',
-                    text2: 'Name is required'
+                    text2: 'Name is required',
                 });
                 return;
             }
 
-            // Clean up the form payload
-            const formPayload: AddClientFormValues = {
+            const formPayload: Client = {
+                ...values,
                 name: values.name.trim(),
                 phone: values.phone?.trim() || undefined,
                 email: values.email?.trim() || undefined,
                 address: values.address?.trim() || undefined,
                 notes: values.notes?.trim() || undefined,
-                measurements: values.measurements,
+                updated_at: new Date().toISOString(),
             };
 
             await onSubmit(formPayload);
@@ -96,7 +93,7 @@ export default function AddClientForm({ initialValues, onSubmit, submitLabel = '
             Toast.show({
                 type: 'error',
                 text1: 'Error',
-                text2: error instanceof Error ? error.message : 'Failed to save client'
+                text2: error instanceof Error ? error.message : 'Failed to save client',
             });
         }
     };
@@ -106,17 +103,13 @@ export default function AddClientForm({ initialValues, onSubmit, submitLabel = '
             behavior={Platform.OS === "ios" ? "padding" : undefined}
             className="flex-1"
         >
-            <ScrollView
-                keyboardShouldPersistTaps="handled"
-                className="flex-1"
-            >
-                {/* Card wrapper */}
+            <ScrollView keyboardShouldPersistTaps="handled" className="flex-1">
+                {/* Client details */}
                 <View className="rounded-2xl border border-zinc-200/70 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
                     <Text className="mb-3 font-bold text-zinc-800 dark:text-zinc-100">
                         Client Details
                     </Text>
 
-                    {/* Two-column grid */}
                     <View className="-mx-2 flex-row flex-wrap">
                         <View className="w-1/2 px-2">
                             <Field
@@ -154,7 +147,7 @@ export default function AddClientForm({ initialValues, onSubmit, submitLabel = '
                     </View>
                 </View>
 
-                {/* Measurements in its own card */}
+                {/* Measurements */}
                 <View className="mt-2 rounded-2xl border border-zinc-200/70 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
                     <MeasurementsForm
                         value={values.measurements}
@@ -162,7 +155,7 @@ export default function AddClientForm({ initialValues, onSubmit, submitLabel = '
                     />
                 </View>
 
-                {/* Notes LAST as a textarea */}
+                {/* Notes */}
                 <View className="mt-2 rounded-2xl border border-zinc-200/70 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
                     <Field
                         label="Notes"
@@ -190,7 +183,13 @@ export default function AddClientForm({ initialValues, onSubmit, submitLabel = '
 }
 
 function Field({
-    label, value, onChangeText, multiline, keyboardType, autoCapitalize, required,
+    label,
+    value,
+    onChangeText,
+    multiline,
+    keyboardType,
+    autoCapitalize,
+    required,
 }: {
     label: string;
     value: string;
