@@ -77,7 +77,7 @@ export default function ClientDetailScreen() {
     }, [client.id, client.name, navigation]);
 
     return (
-        <View className="flex-1">
+        <View className="flex-1 mb-10 pb-24">
             <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
                 {/* Top card */}
                 <View className="px-4 pt-4">
